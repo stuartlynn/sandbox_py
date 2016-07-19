@@ -28,7 +28,6 @@ class Calabration(object):
         return img,np.float32(corners)
         
         
-    def     
     def run(self):
         center = (self.projector_resolution[0]/2, self.projector_resolution[1]/2)
         no = 6 
@@ -37,14 +36,18 @@ class Calabration(object):
         calabrating = True
         warp = False
         invert = np.array([[-1,0,0], [0,-1,0], [0,0,1] ] , dtype=np.uint8)
+        
         cv2.namedWindow('sandbox')
         cv2.moveWindow('sandbox',1280,-80)
         while True:
             (depth,got_depth), (rgb,_) = get_depth(), get_video()
             depth = depth.astype(np.uint8)
-            depth = cv2.cvtColor(v2.cvtColor(depth, cv.CV_GRAY2RGB), cv.CV_RGB2Lab)
-        
-            cv2.imshow('depth', depthCol)
+            depth = cv2.cvtColor(cv2.cvtColor(depth, cv2.COLOR_GRAY2BGR), cv2.COLOR_RGB2LAB )
+            depth[:,:,0] = depth[:,:,0]*200
+            # depth = cv2.warpPerspective(depth,invert, (depth.shape[1], depth.shape[0]))
+            # rgb   = cv2.warpPerspective(rgb,invert,(depth.shape[1], depth.shape[0]))
+            
+            cv2.imshow('depth', depth)
             if calabrating:
                 cv2.imshow('sandbox', img)
                 
@@ -57,7 +60,7 @@ class Calabration(object):
                 
             if not calabrating:
                 size  = (img.shape[1],img.shape[0])
-                transformed= cv2.warpPerspective(depthCol,transform,size)
+                transformed= cv2.warpPerspective(depth,transform*invert,size)
                 cv2.imshow('sandbox', transformed)
             
             key=cv2.waitKey(30)
@@ -68,7 +71,7 @@ class Calabration(object):
 if __name__ == "__main__":
     camera =''
     c = Calabration(camera,20, projector_resolution=(720, 1280))
-    transformation_matrix = c.run()
+    c.run()
     
     # with open('calabration.npy') as output :
     #     np.save(output,[c])
