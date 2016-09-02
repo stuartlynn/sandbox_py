@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+using namespace cv;
+
 //--------------------------------------------------------------
 void ofApp::setup() {
     ofSetLogLevel(OF_LOG_VERBOSE);
@@ -24,12 +26,10 @@ void ofApp::setup() {
     bThreshWithOpenCV = true;
     
     // zero the tilt on startup
-    angle = 0;
-    kinect.setCameraTiltAngle(angle);
-    
-    // start from the front
-    bDrawPointCloud = false;
+//    kinect.setCameraTiltAngle(0);
+	
 	calibrationMode = false;
+	homographyReady = false;
 }
 
 //--------------------------------------------------------------
@@ -81,15 +81,15 @@ void ofApp::draw() {
 	drawDepthRainbow(0, 0, 640, 480);
 	drawCameraImage(640, 0, 640, 480);
 	
-	if(calibrationMode){
-		drawCheckerboard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
-	}
+//	if(calibrationMode){
+//		drawChessBoard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
+//	}
 }
 
 static float minZ = 0.0;
 static float maxZ = 100.0;
 
-void ofApp::drawCheckerboard(ofPoint center, float width, int numSide){
+void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
 	float halfWidth = width * 0.5;
 	float squareWidth = width / (float)numSide;
 	for(int i = 0; i < numSide; i++){
@@ -98,6 +98,58 @@ void ofApp::drawCheckerboard(ofPoint center, float width, int numSide){
 			ofDrawRectangle(center.x + (i-numSide*0.5) * squareWidth, center.y + (j-numSide*0.5) * squareWidth, squareWidth, squareWidth);
 		}
 	}
+}
+
+void ofApp::calibrate(){
+	vector<ofVec2f> srcPoints, dstPoints;
+	ofPoint center = ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5);
+	
+	float chessBoardWidth = ofGetHeight() * 0.66;
+	drawChessBoard(center, chessBoardWidth, 6);
+	
+	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
+	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
+	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
+	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
+
+	
+	homography = findHomography(Mat(srcPoints), Mat(dstPoints));
+	homographyReady = true;
+
+
+	bool found=false;
+
+	vector<Point2f> pointBuf;
+
+	ofImage cameraImage;
+	int w = 640;
+	int h = 480;
+	cameraImage.allocate(w, h, OF_IMAGE_COLOR);
+	cameraImage.setColor(ofColor::white);
+	for (int i = 0; i < w; i++) {
+		for (int j = 0; j < h; j++) {
+			ofColor color = kinect.getColorAt(i,j);
+			cameraImage.setColor(i % w, j % h, color);
+		}
+	}
+	cameraImage.update();
+	
+//	Mat img = toCv(cameraImage);
+//	int chessFlags = CV_CALIB_CB_ADAPTIVE_THRESH;// | CV_CALIB_CB_NORMALIZE_IMAGE;
+//	found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
+
+
+	
+/*
+	found, corners = cv2.findChessboardCorners(rgb,(no-1,no-1))
+	if found:
+		corners = corners.reshape(actual_corners.shape)
+		
+		base_depth = raw_depth.copy()
+		
+		transform, status =  cv2.findHomography(corners,actual_corners)
+		calabrating = False
+*/
 }
 
 void ofApp::drawDepthRainbow(int x, int y, int width, int height){
@@ -199,10 +251,6 @@ void ofApp::keyPressed (int key) {
             bThreshWithOpenCV = !bThreshWithOpenCV;
             break;
             
-        case'p':
-            bDrawPointCloud = !bDrawPointCloud;
-            break;
-            
         case '>':
         case '.':
             farThreshold ++;
@@ -226,10 +274,10 @@ void ofApp::keyPressed (int key) {
             if (nearThreshold < 0) nearThreshold = 0;
             break;
             
-        case 'w':
-            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-            break;
-            
+//        case 'w':
+//            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+//            break;
+			
         case 'q':
 //            kinect.setCameraTiltAngle(0); // zero the tilt
             kinect.close();
@@ -242,65 +290,36 @@ void ofApp::keyPressed (int key) {
 			
 			
         case OF_KEY_UP:
-            angle++;
-            if(angle>30) angle=30;
-            kinect.setCameraTiltAngle(angle);
+//            angle++;
+//            if(angle>30) angle=30;
+//            kinect.setCameraTiltAngle(angle);
             break;
             
         case OF_KEY_DOWN:
-            angle--;
-            if(angle<-30) angle=-30;
-            kinect.setCameraTiltAngle(angle);
+//            angle--;
+//            if(angle<-30) angle=-30;
+//            kinect.setCameraTiltAngle(angle);
             break;
     }
 }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-
-}
-
+void ofApp::keyReleased(int key){ }
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
-}
-
+void ofApp::mouseMoved(int x, int y ){ }
 //--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
-}
-
+void ofApp::mouseDragged(int x, int y, int button){ }
 //--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-
-}
-
+void ofApp::mousePressed(int x, int y, int button){ }
 //--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
-}
-
+void ofApp::mouseReleased(int x, int y, int button){ }
 //--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
+void ofApp::mouseEntered(int x, int y){ }
 //--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
+void ofApp::mouseExited(int x, int y){ }
 //--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
+void ofApp::windowResized(int w, int h){ }
 //--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
+void ofApp::gotMessage(ofMessage msg){ }
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
-}
+void ofApp::dragEvent(ofDragInfo dragInfo){ }

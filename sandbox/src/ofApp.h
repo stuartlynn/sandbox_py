@@ -35,18 +35,19 @@ class ofApp : public ofBaseApp{
     ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
 	
     bool bThreshWithOpenCV;
-    bool bDrawPointCloud;
     
     int nearThreshold;
     int farThreshold;
-	
-    int angle;
-	
+		
 	void drawDepthRainbow(int x, int y, int w, int h);
 	void drawCameraImage(int x, int y, int width, int height);
 	
-	void drawCheckerboard(ofPoint center, float width, int numSide);
-	
+	// calibration
+	void drawChessBoard(ofPoint center, float width, int numSide);
 	bool calibrationMode;
+	void calibrate();
+
+	cv::Mat homography;
+	bool homographyReady;
 
 };
