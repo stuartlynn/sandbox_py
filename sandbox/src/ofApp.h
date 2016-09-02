@@ -45,6 +45,8 @@ class ofApp : public ofBaseApp{
 	void drawDepthRainbow(int x, int y, int w, int h);
 	void drawCameraImage(int x, int y, int width, int height);
 	
-	void drawCheckerboard(ofPoint center, float width);
+	void drawCheckerboard(ofPoint center, float width, int numSide);
+	
+	bool calibrationMode;
 
 };

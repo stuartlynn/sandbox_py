@@ -29,6 +29,7 @@ void ofApp::setup() {
     
     // start from the front
     bDrawPointCloud = false;
+	calibrationMode = false;
 }
 
 //--------------------------------------------------------------
@@ -79,13 +80,24 @@ void ofApp::draw() {
 
 	drawDepthRainbow(0, 0, 640, 480);
 	drawCameraImage(640, 0, 640, 480);
+	
+	if(calibrationMode){
+		drawCheckerboard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
+	}
 }
 
 static float minZ = 0.0;
 static float maxZ = 100.0;
 
-void ofApp::drawCheckerboard(ofPoint center, float width){
-	
+void ofApp::drawCheckerboard(ofPoint center, float width, int numSide){
+	float halfWidth = width * 0.5;
+	float squareWidth = width / (float)numSide;
+	for(int i = 0; i < numSide; i++){
+		for(int j = 0; j < numSide; j++){
+			ofSetColor(((i+j)%2) * 255);
+			ofDrawRectangle(center.x + (i-numSide*0.5) * squareWidth, center.y + (j-numSide*0.5) * squareWidth, squareWidth, squareWidth);
+		}
+	}
 }
 
 void ofApp::drawDepthRainbow(int x, int y, int width, int height){
@@ -102,19 +114,13 @@ void ofApp::drawDepthRainbow(int x, int y, int width, int height){
 	for (int i = 0; i < w; i++) {
 		for (int j = 0; j < h; j++) {
 			ofVec3f depth = kinect.getWorldCoordinateAt(i, j);
-//			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
-			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
-			
-//			color.setHue(200);
-//			color.setBrightness(200);
-//			color.setSaturation(200);
+			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
+//			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
 
-			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
-			
-			color.setHsb(hue, 200, 200);
-			
+//			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
+//			color.setHsb(hue, 200, 200);
+
 			img.setColor(i % w, j % h, color);
-
 			if(depth.z < updateMinZ) updateMinZ = depth.z;
 			if(depth.z > updateMaxZ) updateMaxZ = depth.z;
 		}
@@ -182,8 +188,8 @@ void ofApp::drawPointCloud() {
 
 //--------------------------------------------------------------
 void ofApp::exit() {
-    kinect.setCameraTiltAngle(0); // zero the tilt on exit
-    kinect.close();    
+//    kinect.setCameraTiltAngle(0); // zero the tilt on exit
+    kinect.close();
 }
 
 //--------------------------------------------------------------
@@ -224,11 +230,16 @@ void ofApp::keyPressed (int key) {
             kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
             break;
             
-        case 'c':
-            kinect.setCameraTiltAngle(0); // zero the tilt
+        case 'q':
+//            kinect.setCameraTiltAngle(0); // zero the tilt
             kinect.close();
             break;
-            
+
+		case 'c':
+//			kinect.setCameraTiltAngle(0); // zero the tilt
+			calibrationMode = !calibrationMode;
+			break;
+			
 			
         case OF_KEY_UP:
             angle++;
