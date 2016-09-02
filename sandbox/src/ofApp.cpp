@@ -31,12 +31,17 @@ void ofApp::setup() {
 	
 	calibrationMode = false;
 	homographyReady = false;
+	
+	outputImage.allocate(640, 480, OF_IMAGE_COLOR);
+
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	
-	ofBackground(0);
+	if(homographyReady)
+		ofBackground(0);
+	else
+		ofBackground(128);
 	
 	kinect.update();
 	
@@ -80,17 +85,26 @@ void ofApp::draw() {
 //	depthImage.draw(10, 320, 400, 300);
 
 	cameraFeed = getCameraImage();
-	
+	depthFeed = getDepthRainbow();
+
 	if(calibrationMode){
-		ofBackground(128);
+//		ofBackground(128);
 		calibrate();
 //		drawChessBoard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
 	}
 	else{
-		drawDepthRainbow(0, 0, 640, 480);
+		depthFeed.draw(0, 0, 640, 480);
 		cameraFeed.draw(640, 0, 640, 480);
 //		drawCameraImage(640, 0, 640, 480);
 	}
+	if(homographyReady){
+		
+		warpPerspective(toCv(depthFeed), toCv(outputImage), homography, cvSize(640, 480));
+		outputImage.update();
+		outputImage.draw(0, 0, 640, 480);
+//		warpPerspective(depthFeed, outputImage, homography, cvSize(640, 480));
+	}
+	
 }
 
 static float minZ = 0.0;
@@ -141,6 +155,7 @@ void ofApp::calibrate(){
 	backAgain.draw(0, 100, 100, 100);
 	
 	if(found){
+		
 //		printf("POINT BUFF: %d\n", pointBuf.size());
 //		printf("SOURCE: %d\n", srcPoints.size());
 		
@@ -160,7 +175,7 @@ void ofApp::calibrate(){
 	 */
 }
 
-void ofApp::drawDepthRainbow(int x, int y, int width, int height){
+ofImage ofApp::getDepthRainbow(){
 	ofImage img;
 	
 	int w = 640;
@@ -186,7 +201,6 @@ void ofApp::drawDepthRainbow(int x, int y, int width, int height){
 		}
 	}
 	img.update();
-	img.draw(x, y, width, height);
 //	ofScale(1, -1, -1);
 	
 	ofDrawBitmapString("MAX:", 0, 500);
@@ -196,6 +210,9 @@ void ofApp::drawDepthRainbow(int x, int y, int width, int height){
 	
 	maxZ = updateMaxZ;
 	minZ = updateMinZ;
+	
+	
+	return img;
 	
 //	if(kinect.getDistanceAt(x, y) > 0) {
 //		kinect.getColorAt(x,y);

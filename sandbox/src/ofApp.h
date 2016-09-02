@@ -52,6 +52,10 @@ public:
 	bool homographyReady;
 	
 	ofImage getCameraImage();
+	ofImage getDepthRainbow();
 	ofImage cameraFeed;
+	ofImage depthFeed;
 	
+	ofImage outputImage;
+
 };
