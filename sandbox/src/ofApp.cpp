@@ -82,9 +82,10 @@ void ofApp::draw() {
 	drawDepthRainbow(0, 0, 640, 480);
 	drawCameraImage(640, 0, 640, 480);
 	
-//	if(calibrationMode){
+	if(calibrationMode){
+		calibrate();
 //		drawChessBoard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
-//	}
+	}
 }
 
 static float minZ = 0.0;
@@ -138,7 +139,6 @@ void ofApp::calibrate(){
 	Mat img = toCv(cameraImage);
 	int chessFlags = CV_CALIB_CB_ADAPTIVE_THRESH;// | CV_CALIB_CB_NORMALIZE_IMAGE;
 	found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
-	
 	
 	
 	/*
