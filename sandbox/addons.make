@@ -1,2 +1,3 @@
+ofxCv
 ofxKinect
 ofxOpenCv
