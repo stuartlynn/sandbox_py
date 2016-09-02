@@ -7,6 +7,7 @@ using namespace ofxCv;
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(60);
+    ofSetFullscreen(1);
 	
 	// enable depth->video image calibration
 	kinect.setRegistration(true);
@@ -32,7 +33,7 @@ void ofApp::setup() {
 	calibrationMode = false;
 	homographyReady = false;
 	
-	outputImage.allocate(640, 480, OF_IMAGE_COLOR);
+	outputImage.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
 
 }
 
@@ -99,9 +100,9 @@ void ofApp::draw() {
 	}
 	if(homographyReady){
 		
-		warpPerspective(toCv(depthFeed), toCv(outputImage), homography, cvSize(640, 480));
+		warpPerspective(toCv(depthFeed), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		outputImage.update();
-		outputImage.draw(0, 0, 640, 480);
+		outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
 //		warpPerspective(depthFeed, outputImage, homography, cvSize(640, 480));
 	}
 	
@@ -134,8 +135,8 @@ void ofApp::calibrate(){
 	for(int i = 1; i < 6; i++){
 		for(int j = 1; j < 6; j++){
 			float squareSize = chessBoardWidth / 6.0;
-			Point2f point = Point2f(center.x - chessBoardWidth * 0.5 + j*squareSize,
-									center.y - chessBoardWidth * 0.5 + i*squareSize);
+			Point2f point = Point2f(center.x - chessBoardWidth * 0.5 + (j)*squareSize,
+									center.y - chessBoardWidth * 0.5 + (i)*squareSize);
 			srcPoints.push_back( point );
 		}
 	}
@@ -159,7 +160,7 @@ void ofApp::calibrate(){
 //		printf("POINT BUFF: %d\n", pointBuf.size());
 //		printf("SOURCE: %d\n", srcPoints.size());
 		
-		homography = findHomography(Mat(srcPoints), Mat(pointBuf));
+		homography = findHomography(Mat(pointBuf), Mat(srcPoints));
 		homographyReady = true;
 		cout << homography << endl << endl;
 	}
@@ -189,7 +190,7 @@ ofImage ofApp::getDepthRainbow(){
 	for (int i = 0; i < w; i++) {
 		for (int j = 0; j < h; j++) {
 			ofVec3f depth = kinect.getWorldCoordinateAt(i, j);
-			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
+			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
 //			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
 
 //			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
