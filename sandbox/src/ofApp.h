@@ -51,4 +51,7 @@ public:
 	cv::Mat homography;
 	bool homographyReady;
 	
+	ofImage getCameraImage();
+	ofImage cameraFeed;
+	
 };

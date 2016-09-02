@@ -78,13 +78,18 @@ void ofApp::draw() {
 //	kinect.draw(420, 10, 400, 300);
 //
 //	depthImage.draw(10, 320, 400, 300);
-	
-	drawDepthRainbow(0, 0, 640, 480);
-	drawCameraImage(640, 0, 640, 480);
+
+	cameraFeed = getCameraImage();
 	
 	if(calibrationMode){
+		ofBackground(128);
 		calibrate();
 //		drawChessBoard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
+	}
+	else{
+		drawDepthRainbow(0, 0, 640, 480);
+		cameraFeed.draw(640, 0, 640, 480);
+//		drawCameraImage(640, 0, 640, 480);
 	}
 }
 
@@ -100,6 +105,7 @@ void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
 			ofDrawRectangle(center.x + (i-numSide*0.5) * squareWidth, center.y + (j-numSide*0.5) * squareWidth, squareWidth, squareWidth);
 		}
 	}
+	ofSetColor(255);
 }
 
 void ofApp::calibrate(){
@@ -108,39 +114,36 @@ void ofApp::calibrate(){
 	
 	float chessBoardWidth = ofGetHeight() * 0.66;
 	drawChessBoard(center, chessBoardWidth, 6);
-	
+	cameraFeed.draw(0, 0, 100, 100);
+
 	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
 	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
 	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
 	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
 	
-	
-	homography = findHomography(Mat(srcPoints), Mat(dstPoints));
-	homographyReady = true;
-	
-	
 	bool found=false;
 	
 	vector<Point2f> pointBuf;
+
+	Mat img = toCv(cameraFeed);
 	
-	ofImage cameraImage;
-	int w = 640;
-	int h = 480;
-	cameraImage.allocate(w, h, OF_IMAGE_COLOR);
-	cameraImage.setColor(ofColor::white);
-	for (int i = 0; i < w; i++) {
-		for (int j = 0; j < h; j++) {
-			ofColor color = kinect.getColorAt(i,j);
-			cameraImage.setColor(i % w, j % h, color);
-		}
-	}
-	cameraImage.update();
-	
-	Mat img = toCv(cameraImage);
 	int chessFlags = CV_CALIB_CB_ADAPTIVE_THRESH;// | CV_CALIB_CB_NORMALIZE_IMAGE;
 	found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
 	
+//	printf("%d", found);
 	
+	ofImage backAgain;
+	toOf(img, backAgain.getPixels());
+	backAgain.update();
+	backAgain.draw(0, 100, 100, 100);
+	
+	if(found){
+	homography = findHomography(Mat(srcPoints), Mat(pointBuf));
+	homographyReady = true;
+	
+	cout << homography << endl << endl;
+	
+	}
 	/*
 	 found, corners = cv2.findChessboardCorners(rgb,(no-1,no-1))
 	 if found:
@@ -195,6 +198,22 @@ void ofApp::drawDepthRainbow(int x, int y, int width, int height){
 //		kinect.getWorldCoordinateAt(x, y);
 //	}
 	
+}
+
+ofImage ofApp::getCameraImage(){
+	ofImage img;
+	int w = 640;
+	int h = 480;
+	img.allocate(w, h, OF_IMAGE_COLOR);
+	img.setColor(ofColor::white);
+	for (int i = 0; i < w; i++) {
+		for (int j = 0; j < h; j++) {
+			ofColor color = kinect.getColorAt(i,j);
+			img.setColor(i % w, j % h, color);
+		}
+	}
+	img.update();
+	return img;
 }
 
 void ofApp::drawCameraImage(int x, int y, int width, int height){
