@@ -109,18 +109,23 @@ void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
 }
 
 void ofApp::calibrate(){
-	vector<ofVec2f> srcPoints, dstPoints;
+	vector<Point2f> srcPoints;
 	ofPoint center = ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5);
 	
 	float chessBoardWidth = ofGetHeight() * 0.66;
 	drawChessBoard(center, chessBoardWidth, 6);
-	cameraFeed.draw(0, 0, 100, 100);
-
-	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
-	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y - chessBoardWidth * 0.5) );
-	srcPoints.push_back(ofVec2f(center.x - chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
-	srcPoints.push_back(ofVec2f(center.x + chessBoardWidth * 0.5, center.y + chessBoardWidth * 0.5) );
 	
+	cameraFeed.draw(0, 0, 100, 100);
+	
+	for(int i = 1; i < 6; i++){
+		for(int j = 1; j < 6; j++){
+			float squareSize = chessBoardWidth / 6.0;
+			Point2f point = Point2f(center.x - chessBoardWidth * 0.5 + j*squareSize,
+									center.y - chessBoardWidth * 0.5 + i*squareSize);
+			srcPoints.push_back( point );
+		}
+	}
+
 	bool found=false;
 	
 	vector<Point2f> pointBuf;
@@ -130,19 +135,18 @@ void ofApp::calibrate(){
 	int chessFlags = CV_CALIB_CB_ADAPTIVE_THRESH;// | CV_CALIB_CB_NORMALIZE_IMAGE;
 	found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
 	
-//	printf("%d", found);
-	
 	ofImage backAgain;
 	toOf(img, backAgain.getPixels());
 	backAgain.update();
 	backAgain.draw(0, 100, 100, 100);
 	
 	if(found){
-	homography = findHomography(Mat(srcPoints), Mat(pointBuf));
-	homographyReady = true;
-	
-	cout << homography << endl << endl;
-	
+//		printf("POINT BUFF: %d\n", pointBuf.size());
+//		printf("SOURCE: %d\n", srcPoints.size());
+		
+		homography = findHomography(Mat(srcPoints), Mat(pointBuf));
+		homographyReady = true;
+		cout << homography << endl << endl;
 	}
 	/*
 	 found, corners = cv2.findChessboardCorners(rgb,(no-1,no-1))
