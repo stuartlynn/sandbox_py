@@ -34,9 +34,7 @@ public:
 	ofxCvGrayscaleImage depthImage; // grayscale depth image
 	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
-	
-	bool bThreshWithOpenCV;
-	
+		
 	int nearThreshold;
 	int farThreshold;
 	
@@ -52,7 +50,7 @@ public:
 	bool homographyReady;
 	
 	ofImage getCameraImage();
-	ofImage getDepthRainbow();
+	ofImage makeDepthRainbow();
 	ofImage cameraFeed;
 	ofImage depthFeed;
 	

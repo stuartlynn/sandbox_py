@@ -1,4 +1,5 @@
 #include "ofApp.h"
+#include <stdlib.h>
 
 using namespace cv;
 using namespace ofxCv;
@@ -7,71 +8,74 @@ using namespace ofxCv;
 void ofApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(60);
-    ofSetFullscreen(1);
-	
-	// enable depth->video image calibration
-	kinect.setRegistration(true);
-	kinect.init();
-	//kinect.init(true); // shows infrared instead of RGB video image
-	//kinect.init(false, false); // disable video image (faster fps)
-	kinect.open();		// opens first available kinect
-	
-	printf("Opening Kinect with %d width and %d height\n",kinect.width, kinect.height);
-	
-	colorImg.allocate(kinect.width, kinect.height);
-	depthImage.allocate(kinect.width, kinect.height);
-	depthThreshNear.allocate(kinect.width, kinect.height);
-	depthThreshFar.allocate(kinect.width, kinect.height);
-	
-	nearThreshold = 230;
-	farThreshold = 70;
-	bThreshWithOpenCV = true;
-	
-	// zero the tilt on startup
-	//    kinect.setCameraTiltAngle(0);
+	ofSetFullscreen(1);
 	
 	calibrationMode = false;
 	homographyReady = false;
 	
-	outputImage.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
-
+	// INITIALIZE KINECT
+	
+	kinect.setRegistration(true); // enable depth->video image calibration
+	kinect.init();
+	if(kinect.open()){		// opens first available kinect
+		printf("Opening Kinect with %d width and %d height\n",kinect.width, kinect.height);
+		
+		colorImg.allocate(kinect.width, kinect.height);
+		depthImage.allocate(kinect.width, kinect.height);
+		depthThreshNear.allocate(kinect.width, kinect.height);
+		depthThreshFar.allocate(kinect.width, kinect.height);
+		
+		depthFeed.allocate(kinect.width, kinect.height, OF_IMAGE_COLOR);
+		outputImage.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
+//		outputImage.allocate(kinect.width, kinect.height, OF_IMAGE_COLOR);
+		
+		nearThreshold = 230;
+		farThreshold = 70;
+		
+		// zero the tilt on startup
+//		kinect.setCameraTiltAngle(0);
+		
+	}
+	else{
+		printf("No Kinect\n");
+		ofExit();
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	if(homographyReady)
-		ofBackground(0);
-	else
+	
+	// gray background until calibrated
+	if(!homographyReady || calibrationMode){
 		ofBackground(128);
+	}else {
+		ofBackground(0);
+	}
 	
 	kinect.update();
-	
 	if(kinect.isFrameNew()) {
-		depthImage.setFromPixels(kinect.getDepthPixels());
 		
-		// we do two thresholds - one for the far plane and one for the near plane
-		// we then do a cvAnd to get the pixels which are a union of the two thresholds
-		if(bThreshWithOpenCV) {
-			depthThreshNear = depthImage;
-			depthThreshFar = depthImage;
-			depthThreshNear.threshold(nearThreshold, true);
-			depthThreshFar.threshold(farThreshold);
-			cvAnd(depthThreshNear.getCvImage(), depthThreshFar.getCvImage(), depthImage.getCvImage(), NULL);
-		} else {
-			// or we do it ourselves - show people how they can work with the pixels
-			ofPixels & pix = depthImage.getPixels();
-			int numPixels = pix.size();
-			for(int i = 0; i < numPixels; i++) {
-				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
-					pix[i] = 255;
-				} else {
-					pix[i] = 0;
-				}
-			}
-		}
-		
-		// update the cv images
-		depthImage.flagImageChanged();
+		cameraFeed.setFromPixels(kinect.getPixels());
+		depthFeed.setFromPixels(kinect.getDepthPixels());
+
+//		if(1) {
+//			depthThreshNear = depthImage;
+//			depthThreshFar = depthImage;
+//			depthThreshNear.threshold(nearThreshold, true);
+//			depthThreshFar.threshold(farThreshold);
+//			cvAnd(depthThreshNear.getCvImage(), depthThreshFar.getCvImage(), depthImage.getCvImage(), NULL);
+//		} else {
+//			ofPixels & pix = depthImage.getPixels();
+//			int numPixels = pix.size();
+//			for(int i = 0; i < numPixels; i++) {
+//				if(pix[i] < nearThreshold && pix[i] > farThreshold) {
+//					pix[i] = 255;
+//				} else {
+//					pix[i] = 0;
+//				}
+//			}
+//		}
+//		depthImage.flagImageChanged();
 	}
 }
 
@@ -80,36 +84,28 @@ void ofApp::draw() {
 	
 	ofSetColor(255, 255);
 	
-//	kinect.drawDepth(10, 10, 400, 300);
-//	kinect.draw(420, 10, 400, 300);
-//
-//	depthImage.draw(10, 320, 400, 300);
-
-	cameraFeed = getCameraImage();
-	depthFeed = getDepthRainbow();
-
 	if(calibrationMode){
-//		ofBackground(128);
+		// CALIBRATION LOOP
 		calibrate();
-//		drawChessBoard(ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5), ofGetHeight(), 6);
 	}
-	else{
-		depthFeed.draw(0, 0, 640, 480);
-		cameraFeed.draw(640, 0, 640, 480);
-//		drawCameraImage(640, 0, 640, 480);
-	}
-	if(homographyReady){
-		
-		warpPerspective(toCv(depthFeed), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
+	else if(homographyReady){
+		// MAIN LOOP
+		ofImage depthRainbow = makeDepthRainbow();
+		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		outputImage.update();
 		outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
-//		warpPerspective(depthFeed, outputImage, homography, cvSize(640, 480));
+	}
+	else{
+		// PRE-CALIBRATION LOOP
+		ofPoint center = ofPoint(ofGetScreenWidth() * 0.5, ofGetScreenHeight() * 0.5);
+		float vidHeight = 400;
+		float vidWidth = vidHeight * 1.3333;
+		// draw camera / depth
+		kinect.draw(center.x - vidWidth, center.y - vidHeight * 0.5, vidWidth, vidHeight);
+		kinect.drawDepth(center.x, center.y - vidHeight * 0.5, vidWidth, vidHeight);
 	}
 	
 }
-
-static float minZ = 0.0;
-static float maxZ = 100.0;
 
 void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
 	float halfWidth = width * 0.5;
@@ -124,14 +120,12 @@ void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
 }
 
 void ofApp::calibrate(){
-	vector<Point2f> srcPoints;
 	ofPoint center = ofPoint(ofGetWidth()*0.5, ofGetHeight()*0.5);
 	
 	float chessBoardWidth = ofGetHeight() * 0.66;
 	drawChessBoard(center, chessBoardWidth, 6);
 	
-	cameraFeed.draw(0, 0, 100, 100);
-	
+	vector<Point2f> srcPoints;
 	for(int i = 1; i < 6; i++){
 		for(int j = 1; j < 6; j++){
 			float squareSize = chessBoardWidth / 6.0;
@@ -140,15 +134,15 @@ void ofApp::calibrate(){
 			srcPoints.push_back( point );
 		}
 	}
-
-	bool found=false;
 	
 	vector<Point2f> pointBuf;
-
+	
 	Mat img = toCv(cameraFeed);
 	
 	int chessFlags = CV_CALIB_CB_ADAPTIVE_THRESH;// | CV_CALIB_CB_NORMALIZE_IMAGE;
-	found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
+	bool found = findChessboardCorners(img, cv::Size(5, 5), pointBuf, chessFlags);
+	
+	cameraFeed.draw(0, 0, 100, 100);
 	
 	ofImage backAgain;
 	toOf(img, backAgain.getPixels());
@@ -156,34 +150,22 @@ void ofApp::calibrate(){
 	backAgain.draw(0, 100, 100, 100);
 	
 	if(found){
-		
-//		printf("POINT BUFF: %d\n", pointBuf.size());
-//		printf("SOURCE: %d\n", srcPoints.size());
-		
 		homography = findHomography(Mat(pointBuf), Mat(srcPoints));
 		homographyReady = true;
-		cout << homography << endl << endl;
+		cout << homography << endl;
+		
+		// break calibration loop
+		calibrationMode = false;
 	}
-	/*
-	 found, corners = cv2.findChessboardCorners(rgb,(no-1,no-1))
-	 if found:
-		corners = corners.reshape(actual_corners.shape)
-		
-		base_depth = raw_depth.copy()
-		
-		transform, status =  cv2.findHomography(corners,actual_corners)
-		calabrating = False
-	 */
 }
 
-ofImage ofApp::getDepthRainbow(){
+// relies on data inside of depthFeed
+ofImage ofApp::makeDepthRainbow(){
+	
 	ofImage img;
 	
-	int w = 640;
-	int h = 480;
-	
-	float updateMinZ = 100;
-	float updateMaxZ = 100;
+	int w = kinect.width;
+	int h = kinect.height;
 	
 	img.allocate(w, h, OF_IMAGE_COLOR);
 	img.setColor(ofColor::white);
@@ -191,69 +173,17 @@ ofImage ofApp::getDepthRainbow(){
 		for (int j = 0; j < h; j++) {
 			ofVec3f depth = kinect.getWorldCoordinateAt(i, j);
 			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
-//			ofColor color= ofColor(((int)depth.z)%255, ((int)depth.z)%255, ((int)depth.z)%255);
-
+//			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
+			
 //			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
 //			color.setHsb(hue, 200, 200);
 			
 			img.setColor(i % w, j % h, color);
-			if(depth.z < updateMinZ) updateMinZ = depth.z;
-			if(depth.z > updateMaxZ) updateMaxZ = depth.z;
-		}
-	}
-	img.update();
-//	ofScale(1, -1, -1);
-	
-	ofDrawBitmapString("MAX:", 0, 500);
-	ofDrawBitmapString(ofToString(maxZ), 30, 500);
-	ofDrawBitmapString("MIN:", 0, 520);
-	ofDrawBitmapString(ofToString(minZ), 30, 520);
-	
-	maxZ = updateMaxZ;
-	minZ = updateMinZ;
-	
-	
-	return img;
-	
-//	if(kinect.getDistanceAt(x, y) > 0) {
-//		kinect.getColorAt(x,y);
-//		kinect.getWorldCoordinateAt(x, y);
-//	}
-	
-}
-
-ofImage ofApp::getCameraImage(){
-	ofImage img;
-	int w = 640;
-	int h = 480;
-	img.allocate(w, h, OF_IMAGE_COLOR);
-	img.setColor(ofColor::white);
-	for (int i = 0; i < w; i++) {
-		for (int j = 0; j < h; j++) {
-			ofColor color = kinect.getColorAt(i,j);
-			img.setColor(i % w, j % h, color);
 		}
 	}
 	img.update();
 	return img;
 }
-
-void ofApp::drawCameraImage(int x, int y, int width, int height){
-	ofImage img;
-	int w = 640;
-	int h = 480;
-	img.allocate(w, h, OF_IMAGE_COLOR);
-	img.setColor(ofColor::white);
-	for (int i = 0; i < w; i++) {
-		for (int j = 0; j < h; j++) {
-			ofColor color = kinect.getColorAt(i,j);
-			img.setColor(i % w, j % h, color);
-		}
-	}
-	img.update();
-	img.draw(x, y, width, height);
-}
-
 
 void ofApp::drawPointCloud() {
 	int w = 640;
@@ -282,16 +212,13 @@ void ofApp::drawPointCloud() {
 
 //--------------------------------------------------------------
 void ofApp::exit() {
-	//    kinect.setCameraTiltAngle(0); // zero the tilt on exit
+//    kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed (int key) {
 	switch (key) {
-		case ' ':
-			bThreshWithOpenCV = !bThreshWithOpenCV;
-			break;
 			
 		case '>':
 		case '.':
