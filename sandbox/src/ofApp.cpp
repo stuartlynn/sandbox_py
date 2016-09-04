@@ -12,6 +12,7 @@ void ofApp::setup() {
 	
 	calibrationMode = false;
 	homographyReady = false;
+	perspective = false;
 	
 	// INITIALIZE KINECT
 	
@@ -104,7 +105,23 @@ void ofApp::draw() {
 		kinect.draw(center.x - vidWidth, center.y - vidHeight * 0.5, vidWidth, vidHeight);
 		kinect.drawDepth(center.x, center.y - vidHeight * 0.5, vidWidth, vidHeight);
 	}
-	
+
+	if(perspective){
+//		ofBackground(0);
+		ofEasyCam cam;
+		cam.enableMouseInput();
+		cam.setPosition(100 * cos(ofGetElapsedTimef()), 100 * sin(ofGetElapsedTimef()), -600);
+		cam.lookAt(ofVec3f(0, 0, 0));
+		cam.begin();
+		ofScale(-1, -1, -1);
+		ofEnableDepthTest();
+		//			drawChessBoard(ofPoint(0, 0), 200, 8);
+		ofMesh mesh = kinectTriangleStripMesh();
+		mesh.draw();
+		ofDisableDepthTest();
+		cam.end();
+	}
+
 }
 
 void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
@@ -185,29 +202,53 @@ ofImage ofApp::makeDepthRainbow(){
 	return img;
 }
 
-void ofApp::drawPointCloud() {
-	int w = 640;
-	int h = 480;
+ofMesh ofApp::kinectTriangleStripMesh(){
 	ofMesh mesh;
-	mesh.setMode(OF_PRIMITIVE_POINTS);
-	int step = 2;
-	for(int y = 0; y < h; y += step) {
-		for(int x = 0; x < w; x += step) {
-			if(kinect.getDistanceAt(x, y) > 0) {
-				mesh.addColor(kinect.getColorAt(x,y));
-				mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
-			}
+	mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+	
+	int width = kinect.width;
+	int height = kinect.height;
+	
+	// lower resolution for speed
+	int STRIDE = 4;
+	
+//	unsigned int count = (width)*2*(height-1) * 3;
+	for(int h = 0; h < height-STRIDE; h+=STRIDE){
+		for(int q = 0; q < width; q+=STRIDE){
+			
+			int w;
+			if(h%2 == 0)
+				w = q;
+			else
+				w = width-1-q;
+			
+			ofVec3f point = ofVec3f(w - width*.5,
+									h - height*.5,
+									kinect.getWorldCoordinateAt(w, h).z * 0.05);
+			ofVec3f point2 = ofVec3f(w - width*.5,
+									 (h+STRIDE) - height*.5,
+									 kinect.getWorldCoordinateAt(w, h+STRIDE).z * 0.05);
+			
+//			point = kinect.getWorldCoordinateAt(w, h);
+//			point2 = kinect.getWorldCoordinateAt(w, h+1);
+
+			ofColor color;
+			int hue;
+
+			mesh.addVertex(point);
+			mesh.addColor(kinect.getColorAt(w, h));
+//			hue = ofMap(h*width+w, 0, height*width+width, 0, 255);
+//			color.setHsb(hue, 200, 200);
+//			mesh.addColor(color);
+
+			mesh.addVertex(point2);
+			mesh.addColor(kinect.getColorAt(w, h+STRIDE));
+//			hue = ofMap((h+INTERVAL)*width+w, 0, height*width+width, 0, 255);
+//			color.setHsb(hue, 200, 200);
+//			mesh.addColor(color);
 		}
 	}
-	glPointSize(3);
-	ofPushMatrix();
-	// the projected points are 'upside down' and 'backwards'
-	ofScale(1, -1, -1);
-	ofTranslate(0, 0, -1000); // center the points a bit
-	ofEnableDepthTest();
-	mesh.drawVertices();
-	ofDisableDepthTest();
-	ofPopMatrix();
+	return mesh;
 }
 
 //--------------------------------------------------------------
@@ -243,6 +284,9 @@ void ofApp::keyPressed (int key) {
 			if (nearThreshold < 0) nearThreshold = 0;
 			break;
 			
+		case 'p':
+			perspective = !perspective;
+			break;
 //        case 'w':
 //            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
 //            break;

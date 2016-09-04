@@ -55,5 +55,9 @@ public:
 	ofImage depthFeed;
 	
 	ofImage outputImage;
+	
+	ofMesh kinectTriangleStripMesh();
+	
+	bool perspective;
 
 };
