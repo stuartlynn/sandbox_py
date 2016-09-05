@@ -13,14 +13,14 @@ void ofApp::setup() {
 	calibrationMode = false;
 	homographyReady = false;
 	perspective = false;
-    int maxSmoothingFrames = 20
-    
+	int maxSmoothingFrames = 20;
+	
     gui.setup();
     gui.add(farThresh.setup("farThresh", 10, -1000,4000));
     gui.add(nearThresh.setup("nearThresh", -10, -1000, 1000));
     gui.add(normalizeButton.setup("Normalize"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
-    gui.add(smoothingFrames.setup("No Smoothing frames",0,0,maxSmoothingFrames);
+    gui.add(smoothingFrames.setup("No Smoothing frames",0,0,maxSmoothingFrames));
             
     gui.add(findCountoursToggle.setup("Find Countours",false));
             
@@ -47,7 +47,8 @@ void ofApp::setup() {
 		
         normalization = Mat::zeros(kinect.width, kinect.height, CV_64F);
 
-		
+		depthMesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+
 		// zero the tilt on startup
 //		kinect.setCameraTiltAngle(0);
 		
@@ -145,17 +146,17 @@ void ofApp::draw() {
 	}
 
 	if(perspective){
-//		ofBackground(0);
 		ofEasyCam cam;
 		cam.enableMouseInput();
-		cam.setPosition(100 * cos(ofGetElapsedTimef()), 100 * sin(ofGetElapsedTimef()), -600);
+		cam.setPosition(0, -500, 600);
 		cam.lookAt(ofVec3f(0, 0, 0));
 		cam.begin();
-		ofScale(-1, -1, -1);
 		ofEnableDepthTest();
-		//			drawChessBoard(ofPoint(0, 0), 200, 8);
-		ofMesh mesh = kinectTriangleStripMesh();
-		mesh.draw();
+		ofPushMatrix();
+		ofRotate(ofGetElapsedTimef()*30, 0, 0, 1);
+		kinectTriangleStripMesh();
+		depthMesh.draw();
+		ofPopMatrix();
 		ofDisableDepthTest();
 		cam.end();
 	}
@@ -269,53 +270,36 @@ ofImage ofApp::makeDepthRainbow(){
 	return img;
 }
 
-ofMesh ofApp::kinectTriangleStripMesh(){
-	ofMesh mesh;
-	mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
-	
+void ofApp::kinectTriangleStripMesh(){
+	depthMesh.clear();
+
 	int width = kinect.width;
 	int height = kinect.height;
 	
 	// lower resolution for speed
 	int STRIDE = 4;
-	
-//	unsigned int count = (width)*2*(height-1) * 3;
+
+	ofPixels depthPixels = depthFeed.getPixels();
+	int rowCounter = 0;
 	for(int h = 0; h < height-STRIDE; h+=STRIDE){
 		for(int q = 0; q < width; q+=STRIDE){
-			
 			int w;
-			if(h%2 == 0)
+			if(rowCounter%2 == 0){
 				w = q;
-			else
+			} else{
 				w = width-1-q;
-			
-			ofVec3f point = ofVec3f(w - width*.5,
-									h - height*.5,
-									kinect.getWorldCoordinateAt(w, h).z * 0.05);
-			ofVec3f point2 = ofVec3f(w - width*.5,
+			}
+			depthMesh.addVertex(ofVec3f(w - width*.5,
+										h - height*.5,
+										depthPixels[h*width+w]));
+			depthMesh.addColor(kinect.getColorAt(w, h));
+			depthMesh.addVertex(ofVec3f(w - width*.5,
 									 (h+STRIDE) - height*.5,
-									 kinect.getWorldCoordinateAt(w, h+STRIDE).z * 0.05);
-			
-//			point = kinect.getWorldCoordinateAt(w, h);
-//			point2 = kinect.getWorldCoordinateAt(w, h+1);
-
-			ofColor color;
-			int hue;
-
-			mesh.addVertex(point);
-			mesh.addColor(kinect.getColorAt(w, h));
-//			hue = ofMap(h*width+w, 0, height*width+width, 0, 255);
-//			color.setHsb(hue, 200, 200);
-//			mesh.addColor(color);
-
-			mesh.addVertex(point2);
-			mesh.addColor(kinect.getColorAt(w, h+STRIDE));
-//			hue = ofMap((h+INTERVAL)*width+w, 0, height*width+width, 0, 255);
-//			color.setHsb(hue, 200, 200);
-//			mesh.addColor(color);
+									 depthPixels[(h+STRIDE)*width+w]));
+			depthMesh.addColor(kinect.getColorAt(w, h+STRIDE));
 		}
+		rowCounter += 1;
 	}
-	return mesh;
 }
 
 //--------------------------------------------------------------

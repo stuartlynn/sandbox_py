@@ -82,8 +82,10 @@ public:
 	
 	ofImage outputImage;
 	
-	ofMesh kinectTriangleStripMesh();
+	void kinectTriangleStripMesh();
 	
 	bool perspective;
+	
+	ofMesh depthMesh;
 
 };
