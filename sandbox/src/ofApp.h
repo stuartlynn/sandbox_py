@@ -4,6 +4,10 @@
 #include "ofxKinect.h"
 #include "ofxOpenCv.h"
 #include "ofxCv.h"
+#include "ofMath.h"
+#include "ofxGui.h"
+
+
 
 class ofApp : public ofBaseApp{
 	
@@ -26,14 +30,31 @@ public:
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
+    void normalizePressed();
+    void clearNormalization();
 	
 	ofxKinect kinect;
+    ofTrueTypeFont myfont;
+
 	
 	ofxCvColorImage colorImg;
 	
 	ofxCvGrayscaleImage depthImage; // grayscale depth image
 	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
+    
+    
+    ofxFloatSlider farThresh;
+    ofxFloatSlider nearThresh;
+    ofxFloatSlider smoothingFrames;
+    
+    ofxToggle findCountoursToggle;
+    
+    ofxButton normalizeButton;
+    ofxButton clearNormalizationButton;
+
+    
+    ofxPanel gui;
 		
 	int nearThreshold;
 	int farThreshold;
@@ -47,12 +68,17 @@ public:
 	void calibrate();
 	
 	cv::Mat homography;
+    cv::Mat normalization;
+    
 	bool homographyReady;
+    bool haveNormalization;
 	
 	ofImage getCameraImage();
 	ofImage makeDepthRainbow();
 	ofImage cameraFeed;
 	ofImage depthFeed;
+    
+    ofxCvContourFinder contourFinder;
 	
 	ofImage outputImage;
 	
