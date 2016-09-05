@@ -13,14 +13,14 @@ void ofApp::setup() {
 	calibrationMode = false;
 	homographyReady = false;
 	perspective = false;
-    int maxSmoothingFrames = 20
+    int maxSmoothingFrames = 20;
     
     gui.setup();
     gui.add(farThresh.setup("farThresh", 10, -1000,4000));
     gui.add(nearThresh.setup("nearThresh", -10, -1000, 1000));
     gui.add(normalizeButton.setup("Normalize"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
-    gui.add(smoothingFrames.setup("No Smoothing frames",0,0,maxSmoothingFrames);
+    gui.add(smoothingFrames.setup("No Smoothing frames",0,0,maxSmoothingFrames));
             
     gui.add(findCountoursToggle.setup("Find Countours",false));
             
