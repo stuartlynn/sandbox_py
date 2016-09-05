@@ -21,10 +21,19 @@ void ofApp::setup() {
     gui.add(nearThresh.setup("nearThresh", -10, -1000, 1000));
     gui.add(normalizeButton.setup("Normalize"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
-    gui.add(smoothingFrames.setup("No Smoothing frames",0,0,maxSmoothingFrames));
+    gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
             
     gui.add(findCountoursToggle.setup("Find Countours",false));
-            
+    
+    frameNo=0;
+    
+    for(int i=0; i< maxSmoothingFrames; i++){
+        depthFrames.push_back( Mat::zeros(kinect.width, kinect.height, CV_64F));
+    }
+    
+    mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+
+    
     normalizeButton.addListener(this,&ofApp::normalizePressed);
     clearNormalizationButton.addListener(this,&ofApp::clearNormalization);
     
@@ -113,10 +122,26 @@ void ofApp::update() {
 		depthImage.flagImageChanged();
 	}
 }
+//--------------------------------------------------------------
+
+void ofApp::bufferFrames(){
+    depthFrames.pop_back();
+    cv::Mat frame = Mat::zeros(kinect.width, kinect.height, CV_64F);
+    for (int i = 0; i < kinect.width; i++) {
+        for (int j = 0; j < kinect.height; j++) {
+            frame.at<double>(i,j) =  kinect.getWorldCoordinateAt(i, j).z;
+        }
+    }
+
+    depthFrames.insert(depthFrames.begin(),frame);
+}
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	
+    
+    frameNo++;
+    ofApp::bufferFrames();
+    
 	ofSetColor(255, 255);
 	
 	if(calibrationMode){
@@ -215,6 +240,14 @@ void ofApp::calibrate(){
 		calibrationMode = false;
 	}
 }
+//-------------------------------------------------------------
+
+void ofApp::averageFrames(){
+    mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+    for(int i=0; i< smoothingFrames; i++){
+        mostRecentDepthField  +=  depthFrames[i]/(float)smoothingFrames;
+    }
+}
 
 // relies on data inside of depthFeed
 ofImage ofApp::makeDepthRainbow(){
@@ -233,8 +266,8 @@ ofImage ofApp::makeDepthRainbow(){
 	for (int i = 0; i < w; i++) {
 		for (int j = 0; j < h; j++) {
             
-			ofVec3f depth = kinect.getWorldCoordinateAt(i, j);
-            float d = depth.z;
+		
+            float d = mostRecentDepthField.at<float>(i);
             
             if (d > depthMax){
                 depthMax= d;
