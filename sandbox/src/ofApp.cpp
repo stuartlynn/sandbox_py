@@ -132,8 +132,8 @@ void ofApp::draw() {
         if(findCountoursToggle){
             cout <<"looin for countours" <<endl;
         }
-        gui.draw();
-        
+//        gui.draw();
+		
 
 	}
 	else{
@@ -278,26 +278,39 @@ void ofApp::kinectTriangleStripMesh(){
 	int height = kinect.height;
 	
 	// lower resolution for speed
-	int STRIDE = 4;
+	int STRIDE = 1;
 
 	ofPixels depthPixels = depthFeed.getPixels();
 	int rowCounter = 0;
-	for(int h = 0; h < height-STRIDE; h+=STRIDE){
+	for(int p = 0; p < height-STRIDE; p+=STRIDE){
 		for(int q = 0; q < width; q+=STRIDE){
-			int w;
+			int w, h1, h2;
+			// triangle order goes like this:
 			if(rowCounter%2 == 0){
+				//  (1)   (3)
+				//   |  /  |  /
+				//   | /   | /  ...
+				//  (2)   (4)
 				w = q;
+				h1 = p;
+				h2 = p+STRIDE;
 			} else{
-				w = width-1-q;
+				//         (4)   (2)
+				//       /  |  /  |
+				// ...  /   | /   |
+				//         (3)   (1)
+				w = width-STRIDE-q;
+				h1 = p+STRIDE;
+				h2 = p;
 			}
 			depthMesh.addVertex(ofVec3f(w - width*.5,
-										h - height*.5,
-										depthPixels[h*width+w]));
-			depthMesh.addColor(kinect.getColorAt(w, h));
+										h1 - height*.5,
+										depthPixels[h1*width+w]));
+			depthMesh.addColor(kinect.getColorAt(w, h1));
 			depthMesh.addVertex(ofVec3f(w - width*.5,
-									 (h+STRIDE) - height*.5,
-									 depthPixels[(h+STRIDE)*width+w]));
-			depthMesh.addColor(kinect.getColorAt(w, h+STRIDE));
+										h2 - height*.5,
+										depthPixels[h2*width+w]));
+			depthMesh.addColor(kinect.getColorAt(w, h2));
 		}
 		rowCounter += 1;
 	}
