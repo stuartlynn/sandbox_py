@@ -6,6 +6,7 @@
 #include "ofxCv.h"
 #include "ofMath.h"
 #include "ofxGui.h"
+#include <vector>
 
 
 
@@ -16,6 +17,7 @@ public:
 	void update();
 	void draw();
 	void exit();
+    
 	
 	void drawPointCloud();
 	
@@ -32,6 +34,8 @@ public:
 	void gotMessage(ofMessage msg);
     void normalizePressed();
     void clearNormalization();
+    void bufferFrames();
+    void averageFrames();
 	
 	ofxKinect kinect;
     ofTrueTypeFont myfont;
@@ -58,6 +62,7 @@ public:
 		
 	int nearThreshold;
 	int farThreshold;
+    int frameNo;
 	
 	void drawDepthRainbow(int x, int y, int w, int h);
 	void drawCameraImage(int x, int y, int width, int height);
@@ -82,7 +87,11 @@ public:
 	
 	ofImage outputImage;
 	
+
 	void kinectTriangleStripMesh();
+    
+    std::vector<cv::Mat> depthFrames;
+    cv::Mat mostRecentDepthField;
 	
 	bool perspective;
 	
