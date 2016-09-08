@@ -76,5 +76,6 @@ public:
 	// more
 	ofImage makeDepthRainbow();
 	ofxCvColorImage rainbowFromGrayscale(ofxCvGrayscaleImage image);
+	ofxCvColorImage convertGrayscaleDataFormat(ofxCvGrayscaleImage image);
     ofxCvContourFinder contourFinder;
 };

@@ -150,7 +150,8 @@ void ofApp::draw() {
 //		ofImage depthRainbow = makeDepthRainbow();
 //		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		if(grayscaleToggle){
-			warpPerspective(toCv(depthGrayscaleImage), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
+			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(depthGrayscaleImage);
+			warpPerspective(toCv(grayColorData), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		} else{
 			ofxCvColorImage rainbow = rainbowFromGrayscale(depthGrayscaleImage);
 			warpPerspective(toCv(rainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
@@ -262,9 +263,7 @@ void ofApp::averageFrames(){
 ofxCvColorImage ofApp::rainbowFromGrayscale(ofxCvGrayscaleImage image){
 	ofxCvColorImage rainbow;
 	rainbow.allocate(image.width, image.height);
-	
 	ofPixels & colorPix = rainbow.getPixels();
-	int numColorPixels = colorPix.size();
 	ofPixels & grayPix = image.getPixels();
 	int numGrayPixels = grayPix.size();
 	for(int i = 0; i < numGrayPixels; i++) {
@@ -277,6 +276,24 @@ ofxCvColorImage ofApp::rainbowFromGrayscale(ofxCvGrayscaleImage image){
 	rainbow.flagImageChanged();
 	return rainbow;
 }
+
+ofxCvColorImage ofApp::convertGrayscaleDataFormat(ofxCvGrayscaleImage image){
+	// this merely converts an ofxCvGrayscaleImage into an ofxCvColorImage format
+	//  but maintains that the image appears grayscale
+	ofxCvColorImage grayscale;
+	grayscale.allocate(image.width, image.height);
+	ofPixels & colorPix = grayscale.getPixels();
+	ofPixels & grayPix = image.getPixels();
+	int numGrayPixels = grayPix.size();
+	for(int i = 0; i < numGrayPixels; i++) {
+		colorPix[i*3+0] = grayPix[i];
+		colorPix[i*3+1] = grayPix[i];
+		colorPix[i*3+2] = grayPix[i];
+	}
+	grayscale.flagImageChanged();
+	return grayscale;
+}
+
 
 
 // relies on data inside of depthFeed
