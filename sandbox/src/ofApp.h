@@ -8,8 +8,6 @@
 #include "ofxGui.h"
 #include <vector>
 
-
-
 class ofApp : public ofBaseApp{
 	
 public:
@@ -17,10 +15,6 @@ public:
 	void update();
 	void draw();
 	void exit();
-    
-	
-	void drawPointCloud();
-	
 	void keyPressed(int key);
 	void keyReleased(int key);
 	void mouseMoved(int x, int y );
@@ -32,69 +26,55 @@ public:
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
-    void normalizePressed();
-    void clearNormalization();
-    void bufferFrames();
-    void averageFrames();
 	
+	// KINECT, VIDEO MEMORY
 	ofxKinect kinect;
-    ofTrueTypeFont myfont;
+	// 2 raw feeds
+	ofImage cameraFeed;
+	ofImage depthFeed;
+	// processed images
+	ofxCvGrayscaleImage depthGrayscaleImage; // depth grayscale, clipped and remapped with thresholds
+//	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
+//	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
+	ofImage outputImage; // the full-screen final projected image
 
-	
-	ofxCvColorImage colorImg;
-	
-	ofxCvGrayscaleImage depthImage; // grayscale depth image
-	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
-	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
-    
-    
+    // GUI
+	bool showGUI;
+	ofxPanel gui;
     ofxFloatSlider farThresh;
     ofxFloatSlider nearThresh;
     ofxFloatSlider smoothingFrames;
-    
-    ofxToggle findCountoursToggle;
-    
+	ofxToggle findCountoursToggle;
     ofxButton normalizeButton;
     ofxButton clearNormalizationButton;
+	ofxToggle grayscaleToggle;
 
-    
-    ofxPanel gui;
-		
-	int nearThreshold;
-	int farThreshold;
+	// HOMOGRAPHY, CALIBRATION
+	void calibrate();
+	void drawChessBoard(ofPoint center, float width, int numSide);
+	bool homographyReady;
+	bool calibrationMode;
+	cv::Mat homography;
+
+	// NORMALIZATION, AVERAGING
+	void normalizePressed();
+	void clearNormalization();
+	void bufferFrames();
+	void averageFrames();
+	cv::Mat normalization;
+	bool haveNormalization;
+	std::vector<cv::Mat> depthFrames;
+	cv::Mat mostRecentDepthField;
+	ofxIntSlider nearThreshold;
+	ofxIntSlider farThreshold;
     int frameNo;
 	
-	void drawDepthRainbow(int x, int y, int w, int h);
-	void drawCameraImage(int x, int y, int width, int height);
-	
-	// calibration
-	void drawChessBoard(ofPoint center, float width, int numSide);
-	bool calibrationMode;
-	void calibrate();
-	
-	cv::Mat homography;
-    cv::Mat normalization;
-    
-	bool homographyReady;
-    bool haveNormalization;
-	
-	ofImage getCameraImage();
-	ofImage makeDepthRainbow();
-	ofImage cameraFeed;
-	ofImage depthFeed;
-    
-    ofxCvContourFinder contourFinder;
-	
-	ofImage outputImage;
-	
-
-	void kinectTriangleStripMesh();
-    
-    std::vector<cv::Mat> depthFrames;
-    cv::Mat mostRecentDepthField;
-	
+	// 3D DEPTH MESH
+	ofMesh makeKinectDepthMesh();
 	bool perspective;
 	
-	ofMesh depthMesh;
-
+	// more
+	ofImage makeDepthRainbow();
+	ofxCvColorImage rainbowFromGrayscale(ofxCvGrayscaleImage image);
+    ofxCvContourFinder contourFinder;
 };
