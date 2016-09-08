@@ -311,7 +311,7 @@ void ofApp::kinectTriangleStripMesh(){
 	int height = kinect.height;
 	
 	// lower resolution for speed
-	int STRIDE = 1;
+	int STRIDE = 4;
 
 	ofPixels depthPixels = depthFeed.getPixels();
 	int rowCounter = 0;
