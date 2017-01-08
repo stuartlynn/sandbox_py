@@ -43,6 +43,8 @@ void ofApp::setup() {
         depthFrames.push_back( Mat::zeros(kinect.width, kinect.height, CV_64F));
     }
     mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+    mostRecentDepthFieldImage.allocate(kinect.width,kinect.height);
+    
 	normalization = Mat::zeros(kinect.width, kinect.height, CV_64F);
 	
 	// INITIALIZE KINECT
@@ -88,6 +90,7 @@ void ofApp::normalizePressed(){
 
 //--------------------------------------------------------------
 void ofApp::update() {
+
 	
 	// gray background until calibrated
 	if(!homographyReady || calibrationMode){
@@ -123,15 +126,19 @@ void ofApp::update() {
 			depthGrayscaleImage.flagImageChanged();
 		}
 	}
+    ofApp::bufferFrames();
+    ofApp::averageFrames();
 }
 //--------------------------------------------------------------
 
 void ofApp::bufferFrames(){
     depthFrames.pop_back();
     cv::Mat frame = Mat::zeros(kinect.width, kinect.height, CV_64F);
+    ofPixels & pix  = depthGrayscaleImage.getPixels();
+
     for (int i = 0; i < kinect.width; i++) {
         for (int j = 0; j < kinect.height; j++) {
-            frame.at<double>(i,j) =  kinect.getWorldCoordinateAt(i, j).z;
+            frame.at<double>(i,j) =  pix[i+ j*kinect.width];
         }
     }
 
@@ -142,7 +149,7 @@ void ofApp::bufferFrames(){
 void ofApp::draw() {
     
     frameNo++;
-    ofApp::bufferFrames();
+    
     
 	ofSetColor(255, 255);
 	
@@ -155,14 +162,14 @@ void ofApp::draw() {
 //		ofImage depthRainbow = makeDepthRainbow();
 //		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
         if(landscapeToggle){
-            ofxCvColorImage landscape = landscapeRampFromGrayscale(depthGrayscaleImage);
+            ofxCvColorImage landscape = landscapeRampFromGrayscale(mostRecentDepthFieldImage);
             warpPerspective(toCv(landscape), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
         }
 		else if(grayscaleToggle){
-			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(depthGrayscaleImage);
+			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(mostRecentDepthFieldImage);
 			warpPerspective(toCv(grayColorData), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		} else{
-			ofxCvColorImage rainbow = rainbowFromGrayscale(depthGrayscaleImage);
+			ofxCvColorImage rainbow = rainbowFromGrayscale(mostRecentDepthFieldImage);
 			warpPerspective(toCv(rainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		}
 		outputImage.update();
@@ -264,9 +271,21 @@ void ofApp::calibrate(){
 
 void ofApp::averageFrames(){
     mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+    ofPixels & depthPixels = mostRecentDepthFieldImage.getPixels();
+    
+    int noPixels =depthPixels.size();
+    //smoothingFrames=10;
+
     for(int i=0; i< smoothingFrames; i++){
         mostRecentDepthField  +=  depthFrames[i]/(float)smoothingFrames;
     }
+    
+    for(int i=0 ; i < kinect.width; i++){
+        for(int j=0; j<kinect.height; j++){
+            depthPixels[i+kinect.width*j]=mostRecentDepthField.at<double>(i,j);
+        }
+    }
+    mostRecentDepthFieldImage.flagImageChanged();
 }
 
 ofxCvColorImage ofApp::landscapeRampFromGrayscale(ofxCvGrayscaleImage image){

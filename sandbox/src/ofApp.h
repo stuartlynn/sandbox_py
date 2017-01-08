@@ -43,7 +43,7 @@ public:
 	ofxPanel gui;
     ofxFloatSlider farThresh;
     ofxFloatSlider nearThresh;
-    ofxFloatSlider smoothingFrames;
+    ofxIntSlider smoothingFrames;
     ofxFloatSlider waterLevel;
     ofxFloatSlider grassLevel;
     ofxFloatSlider sandLevel;
@@ -71,6 +71,7 @@ public:
 	bool haveNormalization;
 	std::vector<cv::Mat> depthFrames;
 	cv::Mat mostRecentDepthField;
+    ofxCvGrayscaleImage mostRecentDepthFieldImage;
 	ofxIntSlider nearThreshold;
 	ofxIntSlider farThreshold;
     int frameNo;
