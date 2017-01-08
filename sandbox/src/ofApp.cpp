@@ -22,8 +22,8 @@ void ofApp::setup() {
 	gui.setPosition(10, 10);
 //    gui.add(farThresh.setup("farThresh", 10, -1000,4000));
 //    gui.add(nearThresh.setup("nearThresh", -10, -1000, 1000));
-	gui.add(farThreshold.setup("Far Threshold", 10, 0, 255));
-	gui.add(nearThreshold.setup("Near Threshold", 230, 0, 255));
+	gui.add(farThreshold.setup("Far Threshold", 150, 0, 255));
+	gui.add(nearThreshold.setup("Near Threshold", 161, 0, 255));
     gui.add(normalizeButton.setup("Normalize"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
     gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
@@ -149,9 +149,11 @@ void ofApp::findBlobs(){
 	ofxCvColorImage color;
 	color.setFromPixels(outputImage.getPixels());
 	ofxCvGrayscaleImage half;
-	half = color;
-	half.threshold(127);
-	contourFinder.findContours(half, 5, (half.width*half.height)/4, 4, false, true);
+    for(int i =0; i < 8; i++) {
+        half = color;
+        half.threshold((i+1)*(255/9.0));
+        contourFinder[i].findContours(half, 5, (half.width*half.height)/4, 4, false, true);
+    }
 }
 
 //--------------------------------------------------------------
@@ -189,19 +191,20 @@ void ofApp::draw() {
         }
 		
 		findBlobs();
-		
-		printf("%d\n", contourFinder.nBlobs);
-		
-		for(int i = 0; i < contourFinder.nBlobs; i++) {
-			ofRectangle r = contourFinder.blobs.at(i).boundingRect;
-			ofxCvBlob blob = contourFinder.blobs.at(i);
-			ofNoFill();
-			ofSetColor(92, 160, 255);
-			blob.draw();
-			ofSetColor(255, 255, 255);
-			ofDrawRectangle(r);
-			ofFill();
-		}
+        
+        for(int c = 0; c < 8; c++){
+            
+            for(int i = 0; i < contourFinder[c].nBlobs; i++) {
+                ofRectangle r = contourFinder[c].blobs.at(i).boundingRect;
+                ofxCvBlob blob = contourFinder[c].blobs.at(i);
+                ofNoFill();
+                ofSetColor(255, 255, 255);
+                blob.draw();
+//                ofSetColor(92, 160, 255);
+//                ofDrawRectangle(r);
+                ofFill();
+            }
+        }
 	}
 	else{
 		// PRE-CALIBRATION LOOP
