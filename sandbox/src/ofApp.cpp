@@ -138,6 +138,15 @@ void ofApp::bufferFrames(){
     depthFrames.insert(depthFrames.begin(),frame);
 }
 
+void ofApp::findBlobs(){
+	ofxCvColorImage color;
+	color.setFromPixels(outputImage.getPixels());
+	ofxCvGrayscaleImage half;
+	half = color;
+	half.threshold(127);
+	contourFinder.findContours(half, 5, (half.width*half.height)/4, 4, false, true);
+}
+
 //--------------------------------------------------------------
 void ofApp::draw() {
     
@@ -154,7 +163,9 @@ void ofApp::draw() {
 		// MAIN LOOP
 //		ofImage depthRainbow = makeDepthRainbow();
 //		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
+		
         if(landscapeToggle){
+			toCv(mostRecentDepthField);
             ofxCvColorImage landscape = landscapeRampFromGrayscale(depthGrayscaleImage);
             warpPerspective(toCv(landscape), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
         }
@@ -170,7 +181,21 @@ void ofApp::draw() {
         if(findCountoursToggle){
             cout <<"looking for countours" <<endl;
         }
-
+		
+		findBlobs();
+		
+		printf("%d\n", contourFinder.nBlobs);
+		
+		for(int i = 0; i < contourFinder.nBlobs; i++) {
+			ofRectangle r = contourFinder.blobs.at(i).boundingRect;
+			ofxCvBlob blob = contourFinder.blobs.at(i);
+			ofNoFill();
+			ofSetColor(92, 160, 255);
+			blob.draw();
+			ofSetColor(255, 255, 255);
+			ofDrawRectangle(r);
+			ofFill();
+		}
 	}
 	else{
 		// PRE-CALIBRATION LOOP
@@ -265,7 +290,7 @@ void ofApp::calibrate(){
 void ofApp::averageFrames(){
     mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
     for(int i=0; i< smoothingFrames; i++){
-        mostRecentDepthField  +=  depthFrames[i]/(float)smoothingFrames;
+        mostRecentDepthField += depthFrames[i]/(float)smoothingFrames;
     }
 }
 
