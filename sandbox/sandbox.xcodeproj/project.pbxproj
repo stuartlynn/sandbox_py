@@ -1283,7 +1283,7 @@
 					"../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a",
 					../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a,
 				);
-				SDKROOT = macosx;
+				SDKROOT = macosx10.11;
 			};
 			name = Debug;
 		};
@@ -1368,7 +1368,7 @@
 					"../../../addons/ofxKinect/libs/libusb-1.0/lib/osx/usb-1.0.a",
 					../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a,
 				);
-				SDKROOT = macosx;
+				SDKROOT = macosx10.11;
 			};
 			name = Release;
 		};

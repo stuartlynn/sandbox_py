@@ -44,7 +44,13 @@ public:
     ofxFloatSlider farThresh;
     ofxFloatSlider nearThresh;
     ofxFloatSlider smoothingFrames;
+    ofxFloatSlider waterLevel;
+    ofxFloatSlider grassLevel;
+    ofxFloatSlider sandLevel;
+    ofxFloatSlider hillLevel;
+    ofxFloatSlider snowLevel;
 	ofxToggle findCountoursToggle;
+    ofxToggle landscapeToggle;
     ofxButton normalizeButton;
     ofxButton clearNormalizationButton;
 	ofxToggle grayscaleToggle;
@@ -77,5 +83,6 @@ public:
 	ofImage makeDepthRainbow();
 	ofxCvColorImage rainbowFromGrayscale(ofxCvGrayscaleImage image);
 	ofxCvColorImage convertGrayscaleDataFormat(ofxCvGrayscaleImage image);
+    ofxCvColorImage landscapeRampFromGrayscale(ofxCvGrayscaleImage image);
     ofxCvContourFinder contourFinder;
 };

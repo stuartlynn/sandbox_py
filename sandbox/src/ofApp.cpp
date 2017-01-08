@@ -29,6 +29,11 @@ void ofApp::setup() {
     gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
     gui.add(findCountoursToggle.setup("Find Countours",false));
 	gui.add(grayscaleToggle.setup("Grayscale",true));
+    gui.add(landscapeToggle.setup("Landscape",false));
+    gui.add(waterLevel.setup("Water Level", 20.0f, 0.0f, 100.0f));
+    gui.add(grassLevel.setup("Grass Level",40.0f,0.0f,100.0f));
+    gui.add(hillLevel.setup("Hill Level",40.0, 0.0f,100.0f));
+    gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
 
 	normalizeButton.addListener(this,&ofApp::normalizePressed);
 	clearNormalizationButton.addListener(this,&ofApp::clearNormalization);
@@ -149,7 +154,11 @@ void ofApp::draw() {
 		// MAIN LOOP
 //		ofImage depthRainbow = makeDepthRainbow();
 //		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
-		if(grayscaleToggle){
+        if(landscapeToggle){
+            ofxCvColorImage landscape = landscapeRampFromGrayscale(depthGrayscaleImage);
+            warpPerspective(toCv(landscape), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
+        }
+		else if(grayscaleToggle){
 			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(depthGrayscaleImage);
 			warpPerspective(toCv(grayColorData), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		} else{
@@ -258,6 +267,44 @@ void ofApp::averageFrames(){
     for(int i=0; i< smoothingFrames; i++){
         mostRecentDepthField  +=  depthFrames[i]/(float)smoothingFrames;
     }
+}
+
+ofxCvColorImage ofApp::landscapeRampFromGrayscale(ofxCvGrayscaleImage image){
+    ofxCvColorImage landscape;
+    landscape.allocate(image.width, image.height);
+    ofPixels & landscapePix  = landscape.getPixels();
+    ofPixels & grayPix  = image.getPixels();
+    
+    
+    int numGrayPixels = grayPix.size();
+    for(int i = 0; i < numGrayPixels; i++ ){
+        ofColor color;
+        if (grayPix[i] < waterLevel){
+            color.r = 95;
+            color.g = 145;
+            color.b = 226;
+        }
+        else if(grayPix[i] > waterLevel && grayPix[i] < waterLevel+grassLevel){
+            color.r = 77;
+            color.g = 198;
+            color.b = 47;
+        }
+        else if((grayPix[i] > waterLevel + grassLevel)  && (grayPix[i] < waterLevel + grassLevel + hillLevel ) ){
+            color.r = 127;
+            color.g = 93;
+            color.b = 15;
+        }
+        else if( grayPix[i] > waterLevel + grassLevel + hillLevel){
+            color.r = 247;
+            color.g = 245;
+            color.b =  239;
+        }
+        landscapePix[i*3+0] = color[0];
+        landscapePix[i*3+1] = color[1];
+        landscapePix[i*3+2] = color[2];
+    }
+    landscape.flagImageChanged();
+    return landscape;
 }
 
 ofxCvColorImage ofApp::rainbowFromGrayscale(ofxCvGrayscaleImage image){
@@ -427,7 +474,7 @@ void ofApp::keyPressed (int key) {
 		case ' ':
 			showGUI = !showGUI;
 			break;
-						
+
 		case OF_KEY_UP:
 //            angle++;
 //            if(angle>30) angle=30;
