@@ -199,7 +199,7 @@ void ofApp::draw() {
                 ofxCvBlob blob = contourFinder[c].blobs.at(i);
                 ofNoFill();
                 ofSetColor(255, 255, 255);
-                blob.draw();
+                drawContour(blob);
 //                ofSetColor(92, 160, 255);
 //                ofDrawRectangle(r);
                 ofFill();
@@ -241,6 +241,16 @@ void ofApp::draw() {
 	if(showGUI){
 		gui.draw();
 	}
+}
+
+void ofApp::drawContour(ofxCvBlob blob){
+    
+    ofNoFill();
+    ofBeginShape();
+    for (int i = 0; i < blob.nPts; i++){
+        ofVertex(blob.pts[i].x, blob.pts[i].y);
+    }
+    ofEndShape(true);
 }
 
 void ofApp::drawChessBoard(ofPoint center, float width, int numSide){

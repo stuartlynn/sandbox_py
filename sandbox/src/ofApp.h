@@ -87,4 +87,6 @@ public:
     ofxCvColorImage landscapeRampFromGrayscale(ofxCvGrayscaleImage image);
     ofxCvContourFinder contourFinder[8];
 	void findBlobs();
+    void drawContour(ofxCvBlob blob);
+
 };
