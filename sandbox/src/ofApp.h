@@ -8,6 +8,7 @@
 #include "ofxGui.h"
 #include <vector>
 
+
 class ofApp : public ofBaseApp{
 	
 public:
@@ -52,6 +53,7 @@ public:
 	ofxToggle findCountoursToggle;
     ofxToggle landscapeToggle;
     ofxButton normalizeButton;
+    ofxButton exportGeoJSONButton;
     ofxButton clearNormalizationButton;
 	ofxToggle grayscaleToggle;
 	ofxToggle shaderToggle;
@@ -77,16 +79,21 @@ public:
 	ofxIntSlider farThreshold;
     int frameNo;
 	
+    // GEOJSON generation
+    string generatePolygon(vector <ofPoint> points,float height);
+    string generateFeatureCollection( );
+    void exportGeoJSONPressed();
 	// 3D DEPTH MESH
 	ofMesh makeKinectDepthMesh();
 	bool perspective;
-	
+    double levels[20];
 	// more
 	ofImage makeDepthRainbow();
 	ofxCvColorImage rainbowFromGrayscale(ofxCvGrayscaleImage image);
 	ofxCvColorImage convertGrayscaleDataFormat(ofxCvGrayscaleImage image);
     ofxCvColorImage landscapeRampFromGrayscale(ofxCvGrayscaleImage image);
-    ofxCvContourFinder contourFinder[8];
+    ofxCvContourFinder contourFinder[20];
+    ofxCvBlob  countours[20];
 	void findBlobs();
     void drawContour(ofxCvBlob blob);
 	
