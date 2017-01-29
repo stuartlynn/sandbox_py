@@ -25,6 +25,7 @@ void ofApp::setup() {
 	gui.add(farThreshold.setup("Far Threshold", 150, 0, 255));
 	gui.add(nearThreshold.setup("Near Threshold", 161, 0, 255));
     gui.add(normalizeButton.setup("Normalize"));
+    gui.add(exportGeoJSONButton.setup("Export GeoJSON"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
     gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
     gui.add(findCountoursToggle.setup("Find Countours",false));
@@ -34,7 +35,9 @@ void ofApp::setup() {
     gui.add(grassLevel.setup("Grass Level",40.0f,0.0f,100.0f));
     gui.add(hillLevel.setup("Hill Level",40.0, 0.0f,100.0f));
     gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
-
+            
+        
+    exportGeoJSONButton.addListener(this,&ofApp::exportGeoJSONPressed);
 	normalizeButton.addListener(this,&ofApp::normalizePressed);
 	clearNormalizationButton.addListener(this,&ofApp::clearNormalization);
 
@@ -52,6 +55,7 @@ void ofApp::setup() {
 	kinect.setRegistration(true); // enable depth->video image calibration
 	kinect.init();
     
+
 	if(kinect.open()){		// opens first available kinect
 		printf("Opening Kinect with %d width and %d height\n",kinect.width, kinect.height);
 		
@@ -149,9 +153,16 @@ void ofApp::findBlobs(){
 	ofxCvColorImage color;
 	color.setFromPixels(outputImage.getPixels());
 	ofxCvGrayscaleImage half;
-    for(int i =0; i < 8; i++) {
+    
+    
+    for(int i=0; i < 20; i++){
+        levels[i] = (i+1)*(255/21.0);
+    }
+    
+    
+    for(int i =0; i < 20; i++) {
         half = color;
-        half.threshold((i+1)*(255/9.0));
+        half.threshold(levels[i]);
         contourFinder[i].findContours(half, 5, (half.width*half.height)/4, 4, false, true);
     }
 }
@@ -192,7 +203,7 @@ void ofApp::draw() {
 		
 		findBlobs();
         
-        for(int c = 0; c < 8; c++){
+        for(int c = 0; c < 20; c++){
             
             for(int i = 0; i < contourFinder[c].nBlobs; i++) {
                 ofRectangle r = contourFinder[c].blobs.at(i).boundingRect;
@@ -244,7 +255,7 @@ void ofApp::draw() {
 }
 
 void ofApp::drawContour(ofxCvBlob blob){
-    
+//    blob.draw();
     ofNoFill();
     ofBeginShape();
     for (int i = 0; i < blob.nPts; i++){
@@ -544,6 +555,65 @@ void ofApp::keyPressed (int key) {
 			break;
 	}
 }
+
+
+//--------------------------------------------------------------
+//Code to generate geojson from the detected contours.
+
+void ofApp::exportGeoJSONPressed(){
+    printf("EXPORING GEO JSON");
+    ofFile output;
+    output.open(ofToDataPath("test.geojson"), ofFile::WriteOnly);
+    string result =  generateFeatureCollection();
+    cout << result << endl;
+    output << result << endl;
+    output.close();
+}
+
+string ofApp::generateFeatureCollection(){
+    std::stringstream result;
+    vector<string> features;
+    
+    result <<"{\"type\": \"FeatureCollection\",\"features\": [ ";
+    for (int j=0; j< 20; j++){
+        for(int i=0; i < contourFinder[j].blobs.size(); i++){
+            features.push_back(generatePolygon(contourFinder[j].blobs[i].pts, levels[j] ));
+        }
+    }
+    
+    for(int i=0 ; i< features.size(); i++){
+        result << features[i];
+        if (i<features.size()-1){
+            result<<",";
+        }
+    }
+    
+    result <<"]}";
+    return result.str();
+    
+}
+
+
+string ofApp::generatePolygon(vector <ofPoint> points,float height){
+    std::stringstream ss;
+    
+    ss << "{\"type\" : \"Feature\",";
+    ss << " \"properties\" : {\"height\":" << height<<" },";
+    ss << " \"geometry\" : { ";
+    ss << " \"type\" : \"Polygon\", ";
+    ss << "\"coordinates\": [[";
+    
+    for (int i =0; i< points.size(); i++){
+        ss << "[";
+        ss << points[i].x/kinect.width - 0.5<<"," << points[i].y/kinect.height - 0.5;
+        ss << "]";
+        ss << ",";
+    }
+    ss <<"[" <<points[0].x/kinect.width - 0.5<<"," << points[0].y/kinect.height - 0.5 << "]" ;
+    ss<< "]]}}";
+    return ss.str();
+}
+
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){ }
