@@ -192,6 +192,7 @@ void ofApp::draw() {
 			ofNoFill();
 			ofSetColor(92, 160, 255);
 			blob.draw();
+			blob.
 			ofSetColor(255, 255, 255);
 			ofDrawRectangle(r);
 			ofFill();
