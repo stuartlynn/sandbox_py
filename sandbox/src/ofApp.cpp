@@ -25,17 +25,18 @@ void ofApp::setup() {
 	gui.add(farThreshold.setup("Far Threshold", 150, 0, 255));
 	gui.add(nearThreshold.setup("Near Threshold", 161, 0, 255));
     gui.add(normalizeButton.setup("Normalize"));
-    gui.add(exportGeoJSONButton.setup("Export GeoJSON"));
+    
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
     gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
     gui.add(findCountoursToggle.setup("Find Countours",false));
 	gui.add(grayscaleToggle.setup("Grayscale",true));
     gui.add(landscapeToggle.setup("Landscape",false));
-    gui.add(waterLevel.setup("Water Level", 20.0f, 0.0f, 100.0f));
-    gui.add(grassLevel.setup("Grass Level",40.0f,0.0f,100.0f));
-    gui.add(hillLevel.setup("Hill Level",40.0, 0.0f,100.0f));
+    gui.add(waterLevel.setup("Water Level", 0.1f, 0.0f, 1.0f));
+    gui.add(grassLevel.setup("Grass Level",0.5f, 0.0f,1.0f));
+    gui.add(hillLevel.setup("Hill Level",0.5f, 0.0f,1.0f));
+	gui.add(snowLevel.setup("Snow Level",0.5f, 0.0f,1.0f));
+    gui.add(exportGeoJSONButton.setup("Export GeoJSON"));
     exportGeoJSONButton.addListener(this,&ofApp::exportGeoJSONPressed);
-	gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
 	gui.add(shaderToggle.setup("Use Shaders",false));
 
 
@@ -209,6 +210,10 @@ void ofApp::draw() {
 			float mousePosition = ofMap(mouseX, 0, ofGetWidth(), 1.0, -1.0, true);
 			mousePosition *= ofGetWidth();
 			shader.setUniform1f("mouseX", mousePosition);
+			shader.setUniform1f("waterLevel", waterLevel);
+			shader.setUniform1f("u_time", ofGetElapsedTimef());
+//			float res[2] = {(float)ofGetWidth(), (float)ofGetHeight()};
+			shader.setUniform2f("u_resolution", (float)ofGetWidth()*.2, (float)ofGetHeight()*.2);
 			ofPushMatrix();
 			ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
 			plane.draw();
