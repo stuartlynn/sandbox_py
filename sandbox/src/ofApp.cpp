@@ -34,10 +34,11 @@ void ofApp::setup() {
     gui.add(waterLevel.setup("Water Level", 20.0f, 0.0f, 100.0f));
     gui.add(grassLevel.setup("Grass Level",40.0f,0.0f,100.0f));
     gui.add(hillLevel.setup("Hill Level",40.0, 0.0f,100.0f));
-    gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
-            
-        
     exportGeoJSONButton.addListener(this,&ofApp::exportGeoJSONPressed);
+	gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
+	gui.add(shaderToggle.setup("Use Shaders",false));
+
+
 	normalizeButton.addListener(this,&ofApp::normalizePressed);
 	clearNormalizationButton.addListener(this,&ofApp::clearNormalization);
 
@@ -49,6 +50,8 @@ void ofApp::setup() {
     mostRecentDepthFieldImage.allocate(kinect.width,kinect.height);
     
 	normalization = Mat::zeros(kinect.width, kinect.height, CV_64F);
+	
+	shader.load("simpleShader/shader");
 	
 	// INITIALIZE KINECT
 
@@ -196,7 +199,26 @@ void ofApp::draw() {
 			warpPerspective(toCv(rainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		}
 		outputImage.update();
-		outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
+		if(shaderToggle){
+			ofPlanePrimitive plane;
+			plane.set(ofGetWidth(), ofGetHeight(), 10, 10);
+			plane.mapTexCoords(0, 0, ofGetWidth(), ofGetHeight());
+			
+			outputImage.getTextureReference().bind();
+			shader.begin();
+			float mousePosition = ofMap(mouseX, 0, ofGetWidth(), 1.0, -1.0, true);
+			mousePosition *= ofGetWidth();
+			shader.setUniform1f("mouseX", mousePosition);
+			ofPushMatrix();
+			ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+			plane.draw();
+			ofPopMatrix();
+			shader.end();
+			outputImage.getTextureReference().unbind();
+		} else{
+			outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
+		}
+		
         if(findCountoursToggle){
             cout <<"looking for countours" <<endl;
         }

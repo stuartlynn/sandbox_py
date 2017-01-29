@@ -56,6 +56,7 @@ public:
     ofxButton exportGeoJSONButton;
     ofxButton clearNormalizationButton;
 	ofxToggle grayscaleToggle;
+	ofxToggle shaderToggle;
 
 	// HOMOGRAPHY, CALIBRATION
 	void calibrate();
@@ -95,5 +96,7 @@ public:
     ofxCvBlob  countours[20];
 	void findBlobs();
     void drawContour(ofxCvBlob blob);
+	
+	ofShader shader;
 
 };
