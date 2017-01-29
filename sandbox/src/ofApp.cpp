@@ -22,8 +22,8 @@ void ofApp::setup() {
 	gui.setPosition(10, 10);
 //    gui.add(farThresh.setup("farThresh", 10, -1000,4000));
 //    gui.add(nearThresh.setup("nearThresh", -10, -1000, 1000));
-	gui.add(farThreshold.setup("Far Threshold", 10, 0, 255));
-	gui.add(nearThreshold.setup("Near Threshold", 230, 0, 255));
+	gui.add(farThreshold.setup("Far Threshold", 150, 0, 255));
+	gui.add(nearThreshold.setup("Near Threshold", 161, 0, 255));
     gui.add(normalizeButton.setup("Normalize"));
     gui.add(clearNormalizationButton.setup("Clear Normalization"));
     gui.add(smoothingFrames.setup("No Smoothing frames",1,1,maxSmoothingFrames));
@@ -33,7 +33,8 @@ void ofApp::setup() {
     gui.add(waterLevel.setup("Water Level", 20.0f, 0.0f, 100.0f));
     gui.add(grassLevel.setup("Grass Level",40.0f,0.0f,100.0f));
     gui.add(hillLevel.setup("Hill Level",40.0, 0.0f,100.0f));
-    gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
+	gui.add(snowLevel.setup("Snow Level",20.0,0.0f,100.0f));
+	gui.add(shaderToggle.setup("Use Shaders",false));
 
 	normalizeButton.addListener(this,&ofApp::normalizePressed);
 	clearNormalizationButton.addListener(this,&ofApp::clearNormalization);
@@ -43,7 +44,11 @@ void ofApp::setup() {
         depthFrames.push_back( Mat::zeros(kinect.width, kinect.height, CV_64F));
     }
     mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+    mostRecentDepthFieldImage.allocate(kinect.width,kinect.height);
+    
 	normalization = Mat::zeros(kinect.width, kinect.height, CV_64F);
+	
+	shader.load("simpleShader/shader");
 	
 	// INITIALIZE KINECT
 
@@ -88,6 +93,7 @@ void ofApp::normalizePressed(){
 
 //--------------------------------------------------------------
 void ofApp::update() {
+
 	
 	// gray background until calibrated
 	if(!homographyReady || calibrationMode){
@@ -123,15 +129,19 @@ void ofApp::update() {
 			depthGrayscaleImage.flagImageChanged();
 		}
 	}
+    ofApp::bufferFrames();
+    ofApp::averageFrames();
 }
 //--------------------------------------------------------------
 
 void ofApp::bufferFrames(){
     depthFrames.pop_back();
     cv::Mat frame = Mat::zeros(kinect.width, kinect.height, CV_64F);
+    ofPixels & pix  = depthGrayscaleImage.getPixels();
+
     for (int i = 0; i < kinect.width; i++) {
         for (int j = 0; j < kinect.height; j++) {
-            frame.at<double>(i,j) =  kinect.getWorldCoordinateAt(i, j).z;
+            frame.at<double>(i,j) =  pix[i+ j*kinect.width];
         }
     }
 
@@ -142,16 +152,18 @@ void ofApp::findBlobs(){
 	ofxCvColorImage color;
 	color.setFromPixels(outputImage.getPixels());
 	ofxCvGrayscaleImage half;
-	half = color;
-	half.threshold(127);
-	contourFinder.findContours(half, 5, (half.width*half.height)/4, 4, false, true);
+    for(int i =0; i < 8; i++) {
+        half = color;
+        half.threshold((i+1)*(255/9.0));
+        contourFinder[i].findContours(half, 5, (half.width*half.height)/4, 4, false, true);
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
     
     frameNo++;
-    ofApp::bufferFrames();
+    
     
 	ofSetColor(255, 255);
 	
@@ -165,38 +177,56 @@ void ofApp::draw() {
 //		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		
         if(landscapeToggle){
-			toCv(mostRecentDepthField);
-            ofxCvColorImage landscape = landscapeRampFromGrayscale(depthGrayscaleImage);
+            ofxCvColorImage landscape = landscapeRampFromGrayscale(mostRecentDepthFieldImage);
             warpPerspective(toCv(landscape), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
         }
 		else if(grayscaleToggle){
-			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(depthGrayscaleImage);
+			ofxCvColorImage grayColorData = convertGrayscaleDataFormat(mostRecentDepthFieldImage);
 			warpPerspective(toCv(grayColorData), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		} else{
-			ofxCvColorImage rainbow = rainbowFromGrayscale(depthGrayscaleImage);
+			ofxCvColorImage rainbow = rainbowFromGrayscale(mostRecentDepthFieldImage);
 			warpPerspective(toCv(rainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 		}
 		outputImage.update();
-		outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
+		if(shaderToggle){
+			ofPlanePrimitive plane;
+			plane.set(ofGetWidth(), ofGetHeight(), 10, 10);
+			plane.mapTexCoords(0, 0, ofGetWidth(), ofGetHeight());
+			
+			outputImage.getTextureReference().bind();
+			shader.begin();
+			float mousePosition = ofMap(mouseX, 0, ofGetWidth(), 1.0, -1.0, true);
+			mousePosition *= ofGetWidth();
+			shader.setUniform1f("mouseX", mousePosition);
+			ofPushMatrix();
+			ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+			plane.draw();
+			ofPopMatrix();
+			shader.end();
+			outputImage.getTextureReference().unbind();
+		} else{
+			outputImage.draw(0, 0, ofGetWidth(), ofGetHeight());
+		}
+		
         if(findCountoursToggle){
             cout <<"looking for countours" <<endl;
         }
 		
 		findBlobs();
-		
-		printf("%d\n", contourFinder.nBlobs);
-		
-		for(int i = 0; i < contourFinder.nBlobs; i++) {
-			ofRectangle r = contourFinder.blobs.at(i).boundingRect;
-			ofxCvBlob blob = contourFinder.blobs.at(i);
-			ofNoFill();
-			ofSetColor(92, 160, 255);
-			blob.draw();
-			blob.
-			ofSetColor(255, 255, 255);
-			ofDrawRectangle(r);
-			ofFill();
-		}
+        
+        for(int c = 0; c < 8; c++){
+            
+            for(int i = 0; i < contourFinder[c].nBlobs; i++) {
+                ofRectangle r = contourFinder[c].blobs.at(i).boundingRect;
+                ofxCvBlob blob = contourFinder[c].blobs.at(i);
+                ofNoFill();
+                ofSetColor(255, 255, 255);
+                drawContour(blob);
+//                ofSetColor(92, 160, 255);
+//                ofDrawRectangle(r);
+                ofFill();
+            }
+        }
 	}
 	else{
 		// PRE-CALIBRATION LOOP
@@ -233,6 +263,16 @@ void ofApp::draw() {
 	if(showGUI){
 		gui.draw();
 	}
+}
+
+void ofApp::drawContour(ofxCvBlob blob){
+    
+    ofNoFill();
+    ofBeginShape();
+    for (int i = 0; i < blob.nPts; i++){
+        ofVertex(blob.pts[i].x, blob.pts[i].y);
+    }
+    ofEndShape(true);
 }
 
 void ofApp::drawChessBoard(ofPoint center, float width, int numSide){
@@ -290,9 +330,21 @@ void ofApp::calibrate(){
 
 void ofApp::averageFrames(){
     mostRecentDepthField = Mat::zeros(kinect.width,kinect.height, CV_64F);
+    ofPixels & depthPixels = mostRecentDepthFieldImage.getPixels();
+    
+    int noPixels =depthPixels.size();
+    //smoothingFrames=10;
+
     for(int i=0; i< smoothingFrames; i++){
         mostRecentDepthField += depthFrames[i]/(float)smoothingFrames;
     }
+    
+    for(int i=0 ; i < kinect.width; i++){
+        for(int j=0; j<kinect.height; j++){
+            depthPixels[i+kinect.width*j]=mostRecentDepthField.at<double>(i,j);
+        }
+    }
+    mostRecentDepthFieldImage.flagImageChanged();
 }
 
 ofxCvColorImage ofApp::landscapeRampFromGrayscale(ofxCvGrayscaleImage image){

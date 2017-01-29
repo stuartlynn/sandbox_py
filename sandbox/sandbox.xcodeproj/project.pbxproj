@@ -1448,6 +1448,7 @@
 					../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)Debug";
+				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1528,6 +1529,7 @@
 					../../../addons/ofxOpenCv/libs/opencv/lib/osx/opencv.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "";
 				WRAPPER_EXTENSION = app;
 				baseConfigurationReference = E4EB6923138AFD0F00A09F29;

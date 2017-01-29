@@ -43,7 +43,7 @@ public:
 	ofxPanel gui;
     ofxFloatSlider farThresh;
     ofxFloatSlider nearThresh;
-    ofxFloatSlider smoothingFrames;
+    ofxIntSlider smoothingFrames;
     ofxFloatSlider waterLevel;
     ofxFloatSlider grassLevel;
     ofxFloatSlider sandLevel;
@@ -54,6 +54,7 @@ public:
     ofxButton normalizeButton;
     ofxButton clearNormalizationButton;
 	ofxToggle grayscaleToggle;
+	ofxToggle shaderToggle;
 
 	// HOMOGRAPHY, CALIBRATION
 	void calibrate();
@@ -71,6 +72,7 @@ public:
 	bool haveNormalization;
 	std::vector<cv::Mat> depthFrames;
 	cv::Mat mostRecentDepthField;
+    ofxCvGrayscaleImage mostRecentDepthFieldImage;
 	ofxIntSlider nearThreshold;
 	ofxIntSlider farThreshold;
     int frameNo;
@@ -84,6 +86,10 @@ public:
 	ofxCvColorImage rainbowFromGrayscale(ofxCvGrayscaleImage image);
 	ofxCvColorImage convertGrayscaleDataFormat(ofxCvGrayscaleImage image);
     ofxCvColorImage landscapeRampFromGrayscale(ofxCvGrayscaleImage image);
-    ofxCvContourFinder contourFinder;
+    ofxCvContourFinder contourFinder[8];
 	void findBlobs();
+    void drawContour(ofxCvBlob blob);
+	
+	ofShader shader;
+
 };
