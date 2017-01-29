@@ -1,6 +1,9 @@
 #version 120
 
 uniform float waterLevel;
+uniform float grassLevel;
+uniform float hillLevel;
+uniform float snowLevel;
 uniform float u_time;
 uniform vec2 u_resolution;
 
@@ -27,15 +30,22 @@ void main() {
 	}
 	c /= float(MAX_ITER);
 	c = 1.17-pow(c, 1.4);
-	vec3 colour = vec3(pow(abs(c), 8.0));
-    colour = clamp(colour + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
-	vec4 color = texture2DRect(tex0, texCoordVarying);
+	vec3 waterColor = vec3(pow(abs(c), 8.0));
+    waterColor = clamp(waterColor + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
 	// END WATER SHADER    
 
     // pick and choose shader per elevation level
-	if(color.r < waterLevel){
-		gl_FragColor = vec4(colour, 1.0);
-	}else{
+	vec4 textureColor = texture2DRect(tex0, texCoordVarying);
+	// TODO: check more than just the R channel
+	if(textureColor.r < waterLevel){
+		gl_FragColor = vec4(waterColor, 1.0);
+	} else if(textureColor.r < grassLevel){
+		gl_FragColor = texture2DRect(tex0, texCoordVarying);//vec4(0.0, 0.0, 0.0, 1.0);
+	} else if(textureColor.r < hillLevel){
+		gl_FragColor = texture2DRect(tex0, texCoordVarying);//vec4(0.0, 0.0, 0.0, 1.0);
+	} else if(textureColor.r < snowLevel){
+		gl_FragColor = texture2DRect(tex0, texCoordVarying);//vec4(0.0, 0.0, 0.0, 1.0);
+	} else{
     	gl_FragColor = texture2DRect(tex0, texCoordVarying);
     }
 }

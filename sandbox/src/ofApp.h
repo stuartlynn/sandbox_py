@@ -93,7 +93,7 @@ public:
 	ofxCvColorImage convertGrayscaleDataFormat(ofxCvGrayscaleImage image);
     ofxCvColorImage landscapeRampFromGrayscale(ofxCvGrayscaleImage image);
     ofxCvContourFinder contourFinder[20];
-    ofxCvBlob  countours[20];
+    ofxCvBlob countours[20];
 	void findBlobs();
     void drawContour(ofxCvBlob blob);
 	
