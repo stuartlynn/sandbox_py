@@ -63,6 +63,7 @@ public:
 	
 	// SOCKET IO
 	void sendImageOverSocket(ofImage image);
+	ofImage downsample;
 
 	ofxSocketIO socketIO;
 	void gotEvent(std::string& name);
