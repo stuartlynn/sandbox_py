@@ -95,12 +95,7 @@ void ofApp::update() {
 	sandbox.update();
 
 	if(isConnected){
-		// send 1/second for testing
-		static unsigned int intSeconds = 0;
-		if((unsigned int)(ofGetElapsedTimef()) != intSeconds){
-			intSeconds = ofGetElapsedTimef();
-			sendImageOverSocket(sandbox.outputImage);
-		}
+		sendImageOverSocket(sandbox.outputImage);
 	}
 }
 
