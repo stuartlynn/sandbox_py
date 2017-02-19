@@ -1,6 +1,9 @@
 #include "ofApp.h"
 #include <stdlib.h>
 
+#include "Poco/Base64Encoder.h"
+#include "Poco/Base64Decoder.h"
+
 using namespace cv;
 using namespace ofxCv;
 
@@ -52,6 +55,15 @@ void ofApp::setup() {
 //	exportGeoJSONButton.addListener(this, &ofApp::guiHandler);
 	
 	sandbox.setup();
+	
+	
+	// SOCKET IO
+	isConnected = false;
+	address = "http://localhost:3000";
+	status = "not connected";
+	socketIO.setup(address);
+	ofAddListener(socketIO.notifyEvent, this, &ofApp::gotEvent);
+	ofAddListener(socketIO.connectionEvent, this, &ofApp::onConnection);
 }
 
 void ofApp::guiInts(int &variable){
@@ -81,6 +93,15 @@ void ofApp::updateGUIToSandbox(){
 //--------------------------------------------------------------
 void ofApp::update() {
 	sandbox.update();
+
+	if(isConnected){
+		// send 1/second for testing
+		static unsigned int intSeconds = 0;
+		if((unsigned int)(ofGetElapsedTimef()) != intSeconds){
+			intSeconds = ofGetElapsedTimef();
+			sendImageOverSocket(sandbox.outputImage);
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -123,6 +144,67 @@ void ofApp::keyPressed (int key) {
 		case OF_KEY_DOWN:
 			break;
 	}
+}
+
+
+void ofApp::sendImageOverSocket(ofImage image){
+	ofPixels px;
+	px.setFromPixels(image.getPixels().getData(), image.getWidth(), image.getHeight(), image.getImageType());
+
+	ofBuffer imageBuffer;
+	ofSaveImage(px, imageBuffer);
+	stringstream b64Image = encode(imageBuffer);
+	std::string eventName = "image";
+	std::string imgString = "";
+	imgString = "data:image/jpeg;base64," + b64Image.str();
+	imgString.erase(std::remove(imgString.begin(), imgString.end(), '\n'), imgString.end());
+	imgString.erase(std::remove(imgString.begin(), imgString.end(), '\r'), imgString.end());
+	cout << "sending emit: " << eventName << endl;
+	socketIO.emit(eventName, imgString);
+}
+
+stringstream ofApp::encode(ofBuffer buffer){
+	// Convert the binary image data to string using base64 encoding
+	stringstream ss;
+	Poco::Base64Encoder b64enc(ss);
+	//	b64enc.setLineLength(0);
+	b64enc << buffer;
+	// here's the data
+	ss.str();
+	return ss;
+}
+
+void ofApp::onConnection () {
+	isConnected = true;
+	bindEvents();
+}
+
+void ofApp::bindEvents () {
+	std::string serverEventName = "server-event";
+	socketIO.bindEvent(serverEvent, serverEventName);
+	ofAddListener(serverEvent, this, &ofApp::onServerEvent);
+
+	std::string pingEventName = "ping";
+	socketIO.bindEvent(pingEvent, pingEventName);
+	ofAddListener(pingEvent, this, &ofApp::onPingEvent);
+}
+
+void ofApp::gotEvent(string& name) {
+	status = name;
+}
+
+void ofApp::onServerEvent (ofxSocketIOData& data) {
+	ofLogNotice("ofxSocketIO", data.getStringValue("stringData"));
+	ofLogNotice("ofxSocketIO", ofToString(data.getIntValue("intData")));
+	ofLogNotice("ofxSocketIO", ofToString(data.getFloatValue("floatData")));
+	ofLogNotice("ofxSocketIO", ofToString(data.getBoolValue("boolData")));
+}
+
+void ofApp::onPingEvent (ofxSocketIOData& data) {
+	ofLogNotice("ofxSocketIO", "ping");
+	std::string pong = "pong";
+	std::string param = "foo";
+	socketIO.emit(pong, param);
 }
 
 //--------------------------------------------------------------
