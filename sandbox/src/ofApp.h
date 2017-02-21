@@ -7,6 +7,11 @@
 
 #include "ARSandbox.h"
 
+// SOCKET IO
+#include "ofEvents.h"
+#include "ofxSocketIO.h"
+#include "ofxSocketIOData.h"
+
 
 class ofApp : public ofBaseApp{
 	
@@ -54,5 +59,22 @@ public:
 	void guiFloats(float &variable);
 	void guiBools(bool &variable);
 	void updateGUIToSandbox();
+	
+	
+	// SOCKET IO
+	void sendImageOverSocket(ofImage image);
+	ofImage downsample;
 
+	ofxSocketIO socketIO;
+	void gotEvent(std::string& name);
+	void onServerEvent(ofxSocketIOData& data);
+	void onPingEvent(ofxSocketIOData& data);
+	bool isConnected;
+	void onConnection();
+	void bindEvents();
+	ofEvent<ofxSocketIOData&> serverEvent;
+	ofEvent<ofxSocketIOData&> pingEvent;
+	std::string address;
+	std::string status;
+	stringstream encode(ofBuffer buffer);
 };

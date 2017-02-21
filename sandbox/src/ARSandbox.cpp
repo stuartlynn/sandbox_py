@@ -43,6 +43,9 @@ void ARSandbox::setup() {
 	
 	shader.load("simpleShader/shader");
 	
+	
+	outputImage.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
+	
 	// INITIALIZE KINECT
 	
 	kinect.setRegistration(true); // enable depth->video image calibration
@@ -53,15 +56,14 @@ void ARSandbox::setup() {
 		printf("Opening Kinect with %d width and %d height\n",kinect.width, kinect.height);
 		
 		depthGrayscaleImage.allocate(kinect.width, kinect.height);
-		//		depthThreshNear.allocate(kinect.width, kinect.height);
-		//		depthThreshFar.allocate(kinect.width, kinect.height);
+//		depthThreshNear.allocate(kinect.width, kinect.height);
+//		depthThreshFar.allocate(kinect.width, kinect.height);
 		
 		depthFeed.allocate(kinect.width, kinect.height, OF_IMAGE_COLOR);
-		outputImage.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
-		//		outputImage.allocate(kinect.width, kinect.height, OF_IMAGE_COLOR);
+//		outputImage.allocate(kinect.width, kinect.height, OF_IMAGE_COLOR);
 		
-		// zero the tilt on startup
-		//		kinect.setCameraTiltAngle(0);
+// zero the tilt on startup
+//		kinect.setCameraTiltAngle(0);
 	}
 	else{
 		printf("No Kinect\n");
@@ -110,12 +112,12 @@ void ARSandbox::update() {
 		depthFeed.setFromPixels(kinect.getDepthPixels());
 		
 		if(0) {
-			// there's perhaps a smart way to do things, instead of iterating over every pixel...
-			//			depthThreshNear = depthImage;
-			//			depthThreshFar = depthImage;
-			//			depthThreshNear.threshold(nearThreshold, true);
-			//			depthThreshFar.threshold(farThreshold);
-			//			cvAnd(depthThreshNear.getCvImage(), depthThreshFar.getCvImage(), depthImage.getCvImage(), NULL);
+// there's perhaps a smart way to do things, instead of iterating over every pixel...
+//			depthThreshNear = depthImage;
+//			depthThreshFar = depthImage;
+//			depthThreshNear.threshold(nearThreshold, true);
+//			depthThreshFar.threshold(farThreshold);
+//			cvAnd(depthThreshNear.getCvImage(), depthThreshFar.getCvImage(), depthImage.getCvImage(), NULL);
 		} else {
 			depthGrayscaleImage.setFromPixels(kinect.getDepthPixels());
 			ofPixels & pix = depthGrayscaleImage.getPixels();
@@ -196,8 +198,8 @@ void ARSandbox::draw() {
 		} break;
 		case calibrated: {
 			// MAIN LOOP
-			//		ofImage depthRainbow = makeDepthRainbow();
-			//		warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
+//			ofImage depthRainbow = makeDepthRainbow();
+//			warpPerspective(toCv(depthRainbow), toCv(outputImage), homography, cvSize(ofGetScreenWidth(), ofGetScreenHeight()));
 			
 			if(landscapeToggle){
 				ofxCvColorImage landscape = landscapeRampFromGrayscale(mostRecentDepthFieldImage);
@@ -468,11 +470,11 @@ ofImage ARSandbox::makeDepthRainbow(){
 			}
 			
 			
-			//			ofColor color= ofColor(((int)depth.z), ((int)depth.z), ((int)depth.z));
-			//			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
-			
-			//			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
-			//			color.setHsb(hue, 200, 200);
+//			ofColor color= ofColor(((int)depth.z), ((int)depth.z), ((int)depth.z));
+//			ofColor color= ofColor(((int)depth.x)%255, ((int)depth.y)%255, ((int)depth.z)%255);
+
+//			int hue = ofMap(depth.z, minZ, maxZ, 0, 255);
+//			color.setHsb(hue, 200, 200);
 			
 			
 		}

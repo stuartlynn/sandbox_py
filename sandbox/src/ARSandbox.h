@@ -43,8 +43,8 @@ public:
 	ofImage depthFeed;
 	// processed images
 	ofxCvGrayscaleImage depthGrayscaleImage; // depth grayscale, clipped and remapped with thresholds
-	//	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
-	//	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
+//	ofxCvGrayscaleImage depthThreshNear; // the near thresholded image
+//	ofxCvGrayscaleImage depthThreshFar; // the far thresholded image
 	ofImage outputImage; // the full-screen final projected image
 	
 	// GUI INPUTS
