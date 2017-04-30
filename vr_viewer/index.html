@@ -1,0 +1,77 @@
+<html>
+    <head>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.js'></script>
+		<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
+
+		<style>
+			#container{
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+    </head>
+    <body>
+		<div id='container'></div>
+
+        <script>
+			function init(){
+
+            	//socket = io.connect('http://192.168.1.38:3000');
+			
+				scene = new THREE.Scene();
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+				camera.position.z = 500;
+			
+				renderer = new THREE.WebGLRenderer();
+				controls = new THREE.OrbitControls( camera );
+				controls.addEventListener('change', render)
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			
+				//planeGeometry = new THREE.PlaneGeometry(1280,720, 1280, 720);
+				planeGeometry = new THREE.PlaneGeometry(60, 60, 9, 9);
+	
+				planeMaterial = new THREE.MeshPhongMaterial({
+  					color: 'red', 
+  					wireframe: true
+				});
+
+				renderer.setClearColor('gray',1);
+				light = new THREE.PointLight(0xffffff);
+				light.position.set(-100,200,100);
+				plane = new THREE.Mesh( planeGeometry, planeMaterial );
+				scene.add(plane);
+				scene.add(light);		
+
+				container = document.getElementById( 'container' );  
+				
+				container.appendChild(renderer.domElement)	
+			}
+
+			function updateHeightMap(){
+				target = document.getElementById("image");	
+				for (var i = 0, l = planeGeometry.vertices.length; i < l; i++) {
+  					planeGeometry.vertices[i].z = 10;  //Math.sin(i/20.0)*200; //data[i] / 65535 * 25;
+				}
+			}
+
+			function render(){
+				//updateHeightMap()
+				requestAnimationFrame(render);
+  				renderer.render( scene, camera );
+				controls.update();
+			}
+
+
+			init();
+			render();
+			
+			//socket.on('image', function(message) {
+        	//	console.log('The server has a message for you: ' + message);
+			//	imageData = message
+			//	target.src = message
+    		//})
+        </script>
+    </body>
+</html>
