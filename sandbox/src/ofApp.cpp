@@ -65,7 +65,8 @@ void ofApp::setup() {
 	ofAddListener(socketIO.notifyEvent, this, &ofApp::gotEvent);
 	ofAddListener(socketIO.connectionEvent, this, &ofApp::onConnection);
 
-	downsample.allocate(200, 200, OF_IMAGE_COLOR);
+//	downsample.allocate(200, 200, OF_IMAGE_COLOR);
+	downsample.allocate(ofGetScreenWidth(), ofGetScreenHeight(), OF_IMAGE_COLOR);
 }
 
 void ofApp::guiInts(int &variable){
@@ -99,7 +100,7 @@ void ofApp::update() {
 	if(isConnected){
 		downsample.setFromPixels(sandbox.outputImage.getPixels());
 //		downsample.resize(888, 500);
-		downsample.resize(177, 100);
+		downsample.resize(100, 100);
 		sendImageOverSocket(downsample);
 	}
 }
